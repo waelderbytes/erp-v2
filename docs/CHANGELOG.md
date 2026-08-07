@@ -10,6 +10,27 @@ im vollen Sinn.
 
 ## [Unreleased]
 
+### Stückliste (BOM), mehrstufig (08.08.2026)
+- Nutzerentscheidung nach Rückfrage (siehe Chat-Verlauf): volle mehrstufige
+  Variante, feste Menge pro Position (kein Verschnitt-Feld), nur echte
+  Artikel-Positionen (keine Text-/Titelzeilen), Baumansicht + druckbare
+  komplett aufgelöste Strukturstückliste von Anfang an
+- Backend: Migration 0012 (`stueckliste_position`, selbstreferenzierend über
+  `artikel`), Zirkelbezug-Schutz per BFS vor dem Insert (nicht per
+  DB-Constraint möglich), nur Fertigungsartikel dürfen eine Stückliste haben
+- Backend: `GET/POST /artikel/:id/stueckliste`,
+  `PATCH/DELETE .../stueckliste/:positionId`,
+  `GET .../stueckliste/aufgeloest` (rekursive Baumstruktur mit effektiver
+  Gesamtmenge je Ebene)
+- Frontend: neuer Tab "Stückliste" (nur bei bomfähigen Fertigungsartikeln
+  aktiv), editierbare direkte Positionen, aufklappbare Nur-Ansicht für
+  verschachtelte Unter-Stücklisten, "Strukturstückliste drucken" (eigenes
+  Druckfenster mit komplett aufgelöster Baumstruktur)
+- Verifiziert lokal: erp-service (`tsc --noEmit`, `nest build`), web
+  (`tsc --noEmit`, `vite build`) - alle fehlerfrei. Migration selbst konnte
+  lokal nicht gegen eine echte DB getestet werden (Sandbox ohne Postgres).
+  Commits `5cf5383` (Backend), `83bb523` (Frontend), gepusht
+
 ### bomfaehig-Flag nachgezogen (08.08.2026)
 - Feldkatalog-Abgleich hatte eine Luecke aufgedeckt: `bomfaehig` war laut
   Doku "bereits vorgesehen", existierte aber nicht in der Entity - vorab

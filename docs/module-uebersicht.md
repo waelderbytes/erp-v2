@@ -88,7 +88,7 @@ konfigurierbare Zusatzfelder, statt alles hart zu codieren.
 ### Fertigung & Anlagenbau (spätere Phase, Datenmodell wird in Phase 1 vorbereitet)
 | Modul | Status | Beschreibung |
 |---|---|---|
-| Stücklisten (BOM) | ⬜ offen | Mehrstufige Stücklisten für Fertigungsartikel/Baugruppen |
+| Stücklisten (BOM) | 🚧 Grundfunktionen implementiert (08.08.2026), noch nicht live verifiziert | erp-service: `stueckliste_position` (selbstreferenzierend über artikel), Zirkelbezug-Schutz per BFS, nur Fertigungsartikel duerfen eine Stückliste haben. Frontend: Tab "Stückliste" (nur bei bomfähigen Fertigungsartikeln), Baumansicht mit aufklappbaren Unter-Stücklisten (nur Ansicht, editiert wird auf der jeweils eigenen Artikelseite), druckbare komplett aufgelöste Strukturstückliste. Noch offen: Live-Test auf dem Server (Migration lokal nicht gegen echte DB testbar), Materialbedarfsplanung/Fertigungsauftraege (Phase spaeter) |
 | Fertigungsaufträge | ⬜ offen | Materialbedarfsplanung, Rückmeldung, Projektbau-Bezug – nutzt die generische Auftragsart "Fertigungsauftrag" aus Phase 2 |
 
 ### Verkauf & Finanzen (Phase 3)
