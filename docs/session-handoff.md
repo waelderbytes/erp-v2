@@ -6,7 +6,7 @@ Diese Zusammenfassung ist für einen neuen Claude-Chat gedacht (Geräte-/Session
 
 Multi-Tenant-ERP-System "WälderBytes ERP V2", von Grund auf neu gebaut (nicht die alte "waelderbytes-suite" v1). Ziel: vollumfängliches ERP mit Auftrags-/Projektverwaltung und Zeiterfassung, als Webapp, self-hosted oder als Abo buchbar, modular erweiterbar, DSGVO-konform.
 
-**Repo:** `https://github.com/waelderbytes/erp-v2.git` (aktueller Stand HEAD: Commit `55480c5`)
+**Repo:** `https://github.com/waelderbytes/erp-v2.git` (aktueller Stand HEAD: Commit `9a079d4`)
 **Server:** Hetzner CPX22, `test.wbyt.app`, Deploy via Docker Compose + Traefik
 **PAT/Zugangsdaten:** liegen in der Cowork-Outputs-Datei `zugangsdaten-NICHT-COMMITTEN.md` — NIE ins Repo committen (Regeln.md Abschnitt 0a)
 
@@ -27,26 +27,15 @@ Multi-Tenant-ERP-System "WälderBytes ERP V2", von Grund auf neu gebaut (nicht d
 6. Frontend-UI Benutzerverwaltung + Zeiterfassung
 7. Backend: Mehrsprachigkeit (Kurztext/Langtext) + interne Notiz bei Artikel — Pattern 1:1 aus ERP v1 übernommen (siehe unten)
 8. Frontend: Artikel Anlegen+Bearbeiten zu einem mehrstufigen Assistenten verschmolzen (`/artikel/neu` und `/artikel/:id` nutzen dieselbe Komponente)
+9. Bugfix "Artikel neu → Lädt…" (fehlender `:id`-Param auf Route) — deployt + bestätigt
+10. Artikel-Wizard-UX: alle Tabs von Anfang an sichtbar (disabled bis Stammdaten gespeichert) + Weiter/Zurück-Fuehrung mit Auto-Sprung nach dem Speichern — deployt
+11. Echtes Einheiten-Modul (`GET/POST/DELETE /einheiten`, `artikel.einheit_id` als FK statt Freitext) + generisches `SearchCreateDropdown` (tippen filtert, "+ anlegen") + Kurztext-Vorschlaege aus vorhandenen Artikeln — deployt + Migrationslauf bestätigt erfolgreich (08.08.2026, nach Fix für fehlende Einheit-Entity in `data-source.ts`, siehe Vorfall 3 unten)
 
 ## Offene Baustelle gerade eben
 
-**Bug "Sprache löschen fehlgeschlagen"**: Root Cause war fehlendes `@HttpCode(204)` auf dem DELETE-Endpoint für Artikel-Übersetzungen (NestJS gibt bei `@Delete()` sonst default 200 mit leerem Body zurück, Frontend-Client `lib/api.ts` erwartet aber nur bei 204 keinen JSON-Body → Crash beim Parsen). **Fix ist committed + gepusht** (Commit `55480c5`), aber **noch NICHT vom User auf dem Server deployt/bestätigt**. Deploy-Befehl (kein Migrations-Schritt nötig, reiner Code-Fix):
+Keine akute Baustelle - alle drei zuletzt behobenen Bugs (Sprache löschen 409/204-Fix, "Artikel neu → Lädt…"-Routing-Fix, fehlende Einheit-Entity in data-source.ts) sind deployt und vom User bestätigt (08.08.2026, "lief durch" nach dem Migrationslauf). Naechster Schritt: Roadmap unten, Punkt 1 (Log-Tab).
 
-```bash
-cd /opt/erp-v2
-git pull
-docker compose build erp-service
-docker compose up -d erp-service
-```
-
-**Zweiter Bug GELOEST (Commit `07ec16a`, gepusht, noch nicht deployt)**: "Artikel neu → zeigt nur 'Lädt…'". Root Cause: Route `artikel/neu` in `App.tsx` hatte keinen `:id`-Parameter, `useParams().id` lieferte bei `/artikel/neu` daher `undefined` statt `"neu"` -> `istNeu` faelschlich `false` -> Render-Guard haengt dauerhaft im Ladezustand (kein Request/Fehler, deckt sich mit User-Beobachtung). Fix: redundante Route entfernt, `artikel/:id` matcht `/artikel/neu` ebenfalls. Lokal verifiziert (`tsc --noEmit`, `vite build`). Deploy-Befehl (kein Migrations-Schritt, reiner Frontend-Code-Fix):
-
-```bash
-cd /opt/erp-v2
-git pull
-docker compose build web
-docker compose up -d web
-```
+Offener Nebenpunkt (nicht code-, sondern server-seitig): `docker compose`-Warnung "Found orphan containers (erp-v2-traefik-1)" auf dem Server. Traefik läuft laut Architektur-Entscheidung bewusst in einem separaten `infra-compose.yml`, nicht in diesem `docker-compose.yml` - die Warnung kommt vermutlich, weil beide Compose-Files ohne `-p` im selben Verzeichnis (`/opt/erp-v2`) laufen und dadurch denselben Projektnamen "erp-v2" erhalten. **NICHT** `--remove-orphans` verwenden, ohne vorher zu bestätigen, dass der Traefik-Container wirklich der aktive Reverse-Proxy ist (sonst Gefahr, die HTTPS-Terminierung fuer die ganze Seite zu killen). Sauberer Fix (spaeter, im Wartungsfenster): Infra-Stack mit eigenem Projektnamen starten (`docker compose -p infra -f infra-compose.yml up -d`).
 
 (Deploy-Service-Name ggf. anpassen, falls das Frontend in docker-compose.yml anders heisst.)
 
@@ -64,6 +53,7 @@ docker compose up -d web
 - **NestJS HTTP-Status-Fallen**: `@Post()` = 201 default, `@Get()/@Put()/@Patch()/@Delete()` = 200 default. `@Delete()` mit `void`-Rückgabe braucht explizites `@HttpCode(204)`, sonst crasht der Frontend-JSON-Parser bei leerem Body.
 - **`@JoinColumn`** ist Pflicht bei `@ManyToOne`, wenn zusätzlich eine rohe FK-Spalte mit implizit gleichem Namen existiert.
 - Postgres `unique_violation` (Code `23505`) wird im Service-Layer als `ConflictException` mit klarer deutscher Meldung abgefangen — durchgängiges Pattern im ganzen Projekt.
+- **Dropdowns generell** (Nutzerwunsch 08.08.2026, "das können wir für alle dropdowns natürlich anwenden"): `apps/web/src/components/ui/search-create-dropdown.tsx` (`SearchCreateDropdown`, 1:1 aus ERP v1 `components/desktop/SearchCreateDropdown.tsx` übernommen) ist der Standard für neue Auswahl-Dropdowns mit Tipp-Filter + optionalem Inline-Anlegen (`onCreateRequest`) + Deaktivieren (`onDeactivate`) — bisher nur bei Artikel→Einheit im Einsatz, aber bewusst domainfrei für Warengruppen/Kunde/Lieferant-Auswahl etc. bei Bedarf.
 
 ## Standing Rules (IMMER einhalten)
 
@@ -81,14 +71,20 @@ docker compose up -d web
 - Deutsch im Projekt-Kontext
 - Code möglichst genau auf Deutsch kommentieren
 
-## Nächste offene Aufgaben (Roadmap, nach aktueller Priorität)
+## Nächste offene Aufgaben (Roadmap, nach aktueller Priorität, Stand 08.08.2026)
 
-1. Deploy des `55480c5`-Fixes bestätigen lassen (Sprache löschen)
-2. ~~"Artikel neu → Lädt…"-Bug aufklären~~ – erledigt (Commit `07ec16a`), Deploy auf dem Server steht noch aus
-3. Artikel: Log-Tab (Audit-Trail + Lagerbuchungen mit Buchungsgrund, Filter "nur Buchungen") — Audit-Log-Tabelle existiert bereits generisch per DB-Trigger, aber noch kein Query-Endpoint dafür
-4. Artikel: Bestand-Tab soll IMMER sichtbar sein, nur ausgegraut/deaktiviert wenn nicht bestandsgeführt (aktuell wird der Tab komplett ausgeblendet — das soll geändert werden)
-5. PWA-Installierbarkeit mit generiertem Platzhalter-Icon (User hat sich explizit für Platzhalter statt eigenem Logo entschieden)
-6. Stückliste (BOM): User will die volle mehrstufige Variante (nicht die von mir empfohlene einfachere). Wichtig: ERP v1 hat die "Strukturstückliste" (druckbare mehrstufige Ansicht) selbst NIE fertig gebaut (nur Platzhalter-Screen) — kann für diesen Teil also nicht 1:1 aus v1 übernommen werden, muss neu entworfen werden. Das flache v1-`stueckliste`-Datenmodell kann aber als Ausgangspunkt dienen.
+1. Artikel: Log-Tab (Audit-Trail + Lagerbuchungen mit Buchungsgrund, Filter "nur Buchungen") — Audit-Log-Tabelle existiert bereits generisch per DB-Trigger, aber noch kein Query-Endpoint dafür
+2. Artikel: Bestand-Tab soll IMMER sichtbar sein, nur ausgegraut/deaktiviert wenn nicht bestandsgeführt (aktuell wird der Tab komplett ausgeblendet — das soll geändert werden)
+3. PWA-Installierbarkeit mit generiertem Platzhalter-Icon (User hat sich explizit für Platzhalter statt eigenem Logo entschieden)
+4. Stückliste (BOM): User will die volle mehrstufige Variante (nicht die von mir empfohlene einfachere). Wichtig: ERP v1 hat die "Strukturstückliste" (druckbare mehrstufige Ansicht) selbst NIE fertig gebaut (nur Platzhalter-Screen) — kann für diesen Teil also nicht 1:1 aus v1 übernommen werden, muss neu entworfen werden. Das flache v1-`stueckliste`-Datenmodell kann aber als Ausgangspunkt dienen. **Voraussetzung:** `artikel.bomfaehig`-Flag fehlt noch (siehe unten), muss vor BOM-Start nachgezogen werden.
+
+## Beim Feldkatalog-Abgleich (07./08.08.2026) gefundene fehlende Artikel-Felder
+
+Laut `docs/feldkatalog.md` vorgesehen, aber in der Entity/DTO noch nicht vorhanden:
+- `steuersatz_id` (Pflicht laut Feldkatalog) — wartet auf Modul Stammdaten/System-Einstellungen (Steuersätze existieren als Konzept noch nicht)
+- `bomfaehig` (Boolean, true nur bei `fertigungsartikel`) — **blockiert Punkt 4 oben (BOM)**, sollte vorher nachgezogen werden
+- `gewicht_kg`, `laenge_mm`/`breite_mm`/`hoehe_mm` (Standard-Erweiterungsfelder, optional)
+- `mindestbestand` (nur relevant wenn `bestandsgefuehrt = true`, bereits separat als offener Punkt bei Lagerverwaltung vermerkt)
 
 ## Sandbox-Hinweis (nur relevant, falls wieder mit Bash/Sandbox gearbeitet wird)
 
