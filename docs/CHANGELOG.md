@@ -10,6 +10,28 @@ im vollen Sinn.
 
 ## [Unreleased]
 
+### Einkauf/Bestellwesen live verifiziert (08.08.2026)
+- Neue Endpoints: `GET/POST /bestellungen`, `GET /bestellungen/:id`, `POST
+  /bestellungen/:id/bestellen`, `POST /bestellungen/wareneingang`
+- Migration 0005_einkauf_bestellwesen: `bestellung`, `bestellposition`, generische
+  `referenz_typ`/`referenz_id`-Spalten auf `lagerbewegung` (Rueckverfolgbarkeit zur
+  Bestellposition), RBAC-Seed modul_key 'einkauf'
+- Wareneingang-Buchung atomar: Lieferstatus der Position (`gelieferte_menge`) und
+  echter Lagerbestand werden in derselben Transaktion fortgeschrieben,
+  Bestellstatus wird automatisch neu berechnet (offen -> bestellt ->
+  teilweise_geliefert -> abgeschlossen), Ueberlieferung wird mit klarer
+  400-Fehlermeldung abgelehnt
+- Bug VOR dem ersten Server-Deploy gefunden und behoben: `LagerModule`
+  exportierte `LagerbewegungService` nicht - haette zu einem Laufzeit-DI-Fehler
+  beim Start von `EinkaufModule` gefuehrt, war durch `tsc`/`nest build` nicht
+  erkennbar (reiner Nest-Dependency-Injection-Fehler), per Code-Review vor dem
+  Deploy gefunden
+- Auf dem Server end-to-end getestet: Bestellung anlegen (Nummer '00001'),
+  bestellen, Teillieferung (20 von 50, Status -> teilweise_geliefert),
+  Ueberlieferung (40 von restlichen 30) korrekt mit 400 abgelehnt, Restlieferung
+  (30) -> Status abgeschlossen, Endbestand per direkter DB-Abfrage bestaetigt
+  (62.000 im Zullager)
+
 ### Lagerverwaltung live verifiziert (08.08.2026)
 - Neue Endpoints: `GET/POST /lager`, `GET /lager/:id/bestand`, `GET
   /lager/artikel/:artikelId/bestand`, `POST /lagerbewegung/wareneingang`, `POST
