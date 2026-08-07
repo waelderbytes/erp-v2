@@ -6,7 +6,7 @@ Diese Zusammenfassung ist für einen neuen Claude-Chat gedacht (Geräte-/Session
 
 Multi-Tenant-ERP-System "WälderBytes ERP V2", von Grund auf neu gebaut (nicht die alte "waelderbytes-suite" v1). Ziel: vollumfängliches ERP mit Auftrags-/Projektverwaltung und Zeiterfassung, als Webapp, self-hosted oder als Abo buchbar, modular erweiterbar, DSGVO-konform.
 
-**Repo:** `https://github.com/waelderbytes/erp-v2.git` (aktueller Stand HEAD: Commit `8df7afa`)
+**Repo:** `https://github.com/waelderbytes/erp-v2.git` (aktueller Stand HEAD: Commit `a094e5a`)
 **Server:** Hetzner CPX22, `test.wbyt.app`, Deploy via Docker Compose + Traefik
 **PAT/Zugangsdaten:** liegen in der Cowork-Outputs-Datei `zugangsdaten-NICHT-COMMITTEN.md` — NIE ins Repo committen (Regeln.md Abschnitt 0a)
 
@@ -33,10 +33,11 @@ Multi-Tenant-ERP-System "WälderBytes ERP V2", von Grund auf neu gebaut (nicht d
 12. Artikel Log-Tab (`GET /artikel/:id/log`, kombiniert Audit-Trail + Lagerbuchungen) + Bestand-Tab jetzt immer sichtbar (nur ausgegraut wenn nicht bestandsgeführt) — gepusht (Commits `3fc7d1f`/`5004a24`), **Deploy/Migration auf dem Server noch nicht bestätigt**
 13. PWA-Installierbarkeit (`vite-plugin-pwa` aktiviert, generierte Platzhalter-Icons) — gepusht (Commit `adfafe4`), **Deploy auf dem Server noch nicht bestätigt**
 14. `artikel.bomfaehig`-Flag nachgezogen (Migration 0011, Vorbereitung Stückliste/BOM) — gepusht (Commit `2bff571`), **Deploy/Migration auf dem Server noch nicht bestätigt**
+15. Stückliste (BOM), mehrstufig: `stueckliste_position` (selbstreferenzierend über artikel), Zirkelbezug-Schutz per BFS, Tab "Stückliste" mit Baumansicht + druckbarer komplett aufgelöster Strukturstückliste — gepusht (Commits `5cf5383`/`83bb523`/`a094e5a`), **NOCH NICHT deployt, Migration 0012 lokal nicht gegen echte DB testbar (Sandbox ohne Postgres) — auf dem Testserver besonders sorgfältig prüfen (Zirkelbezug-Fehlermeldung testen, mehrstufig anlegen)**
 
 ## Offene Baustelle gerade eben
 
-Roadmap-Punkte 1-3 (Log-Tab, Bestand-Tab-immer-sichtbar, PWA) plus der vorgezogene `bomfaehig`-Fix sind alle CODE-fertig, lokal verifiziert und gepusht (Commits `3fc7d1f`, `5004a24`, `adfafe4`, `2bff571`) - **aber noch NICHT vom User auf dem Server deployt/bestätigt**. Deploy-Befehl (MIT Migrations-Schritt, da `bomfaehig` eine Schema-Aenderung ist):
+ALLE Roadmap-Punkte (Log-Tab, Bestand-Tab-immer-sichtbar, PWA, `bomfaehig`, Stückliste/BOM) sind CODE-fertig, lokal verifiziert und gepusht (Commits `3fc7d1f`, `5004a24`, `adfafe4`, `2bff571`, `5cf5383`, `83bb523`) - **aber noch NICHT vom User auf dem Server deployt/bestätigt**. Deploy-Befehl (MIT Migrations-Schritt, mehrere Schema-Aenderungen seit dem letzten bestätigten Deploy):
 
 ```bash
 cd /opt/erp-v2
@@ -46,7 +47,11 @@ docker compose up -d erp-service web
 docker compose exec erp-service npm run migration:run:prod
 ```
 
-Naechster Roadmap-Schritt danach: Stückliste (BOM, Punkt 4) - das ist eine groessere Datenmodell-Entscheidung (mehrstufige Struktur, v1 hat das nie fertig gebaut), sollte NICHT einfach durchimplementiert werden, sondern der Ansatz erst mit dem User abgestimmt werden (siehe Nutzerpräferenz: keine Annahmen treffen).
+**Wichtig fuer diesen Deploy**: Migration 0012 (Stueckliste) konnte lokal NICHT gegen eine echte Postgres-DB getestet werden (Cowork-Sandbox hat keinen Docker/Postgres-Zugriff, kein root fuer apt). Nach dem Deploy auf dem Testserver gezielt pruefen: mehrstufige Stueckliste anlegen (Fertigungsartikel A enthaelt Fertigungsartikel B enthaelt Handelsware C), Zirkelbezug-Versuch (C enthaelt A hinzufuegen) MUSS mit klarer Fehlermeldung abgelehnt werden, "Strukturstückliste drucken" oeffnet ein Druckfenster mit allen Ebenen.
+
+Die Stückliste-Datenmodell-Entscheidungen (siehe Roadmap-Historie unten) wurden VOR der Umsetzung mit dem User abgestimmt (AskUserQuestion: feste Menge statt Verschnitt-Aufschlag, nur echte Artikel-Positionen statt Textzeilen, Baumansicht UND druckbare Strukturstückliste von Anfang an).
+
+Naechster Roadmap-Schritt nach bestätigtem Deploy: keiner mehr offen aus der bisherigen Liste - neue Prioritaeten mit dem User klaeren (z.B. Materialbedarfsplanung/Fertigungsauftraege als Folgeschritt der Stückliste, oder ein anderes Modul aus module-uebersicht.md).
 
 Offener Nebenpunkt (nicht code-, sondern server-seitig): `docker compose`-Warnung "Found orphan containers (erp-v2-traefik-1)" auf dem Server. Traefik läuft laut Architektur-Entscheidung bewusst in einem separaten `infra-compose.yml`, nicht in diesem `docker-compose.yml` - die Warnung kommt vermutlich, weil beide Compose-Files ohne `-p` im selben Verzeichnis (`/opt/erp-v2`) laufen und dadurch denselben Projektnamen "erp-v2" erhalten. **NICHT** `--remove-orphans` verwenden, ohne vorher zu bestätigen, dass der Traefik-Container wirklich der aktive Reverse-Proxy ist (sonst Gefahr, die HTTPS-Terminierung fuer die ganze Seite zu killen). Sauberer Fix (spaeter, im Wartungsfenster): Infra-Stack mit eigenem Projektnamen starten (`docker compose -p infra -f infra-compose.yml up -d`). Noch ungeklaert, ob `test.wbyt.app` gerade normal ueber HTTPS erreichbar ist (User-Bestaetigung steht aus).
 
@@ -82,13 +87,17 @@ Offener Nebenpunkt (nicht code-, sondern server-seitig): `docker compose`-Warnun
 - Deutsch im Projekt-Kontext
 - Code möglichst genau auf Deutsch kommentieren
 
-## Nächste offene Aufgaben (Roadmap, nach aktueller Priorität, Stand 08.08.2026)
+## Nächste offene Aufgaben (Roadmap, Stand 08.08.2026)
+
+Alle bisherigen Roadmap-Punkte sind CODE-fertig (siehe "Offene Baustelle" oben fuer Deploy-Status):
 
 1. ~~Artikel: Log-Tab~~ — erledigt (Commits `3fc7d1f`/`5004a24`), Deploy steht aus
 2. ~~Artikel: Bestand-Tab immer sichtbar~~ — erledigt (Commit `5004a24`), Deploy steht aus
 3. ~~PWA-Installierbarkeit~~ — erledigt (Commit `adfafe4`), Deploy steht aus
 4. ~~`bomfaehig`-Flag nachgezogen~~ — erledigt (Commit `2bff571`), Deploy steht aus
-5. **Stückliste (BOM)** — naechster Schritt, aber Datenmodell/Ansatz MUSS erst mit dem User abgestimmt werden, bevor Code geschrieben wird: User will die volle mehrstufige Variante (nicht die von mir empfohlene einfachere). ERP v1 hat die "Strukturstückliste" (druckbare mehrstufige Ansicht) selbst NIE fertig gebaut (nur Platzhalter-Screen) — kann also nicht 1:1 aus v1 übernommen werden, muss neu entworfen werden. Das flache v1-`stueckliste`-Datenmodell kann als Ausgangspunkt dienen (Recherche in v1 vor Design-Entscheidung: `services/erp-service` nach "stueckliste" durchsuchen). Voraussetzung `bomfaehig` ist jetzt erfuellt.
+5. ~~Stückliste (BOM), mehrstufig~~ — erledigt (Commits `5cf5383`/`83bb523`), Deploy steht aus. Entschieden VOR der Umsetzung (nicht geraten): feste Menge (kein Verschnitt-Feld), nur echte Artikel-Positionen (keine Textzeilen), Baumansicht + druckbare Strukturstückliste von Anfang an. ERP v1 hat die "Strukturstückliste" selbst nie fertig gebaut - Datenmodell hier komplett neu entworfen.
+
+**Keine weiteren Roadmap-Punkte offen** - naechste Prioritaet muss neu mit dem User geklaert werden (z.B. Materialbedarfsplanung/Fertigungsauftraege als natuerlicher Folgeschritt der Stückliste, siehe module-uebersicht.md "Fertigung & Anlagenbau").
 
 ## Beim Feldkatalog-Abgleich (07./08.08.2026) gefundene fehlende Artikel-Felder
 
