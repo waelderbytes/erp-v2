@@ -140,3 +140,14 @@ export interface ArbeitszeitHeute {
   pausenzeitMinuten: number;
   status: ZeitbuchungStatus;
 }
+
+export interface ArtikelLieferant {
+  id: string;
+  artikelId: string;
+  lieferantId: string;
+  lieferantenArtikelnummer: string | null;
+  einkaufspreis: string | null;
+  lieferzeitTage: number | null;
+  istBevorzugt: boolean;
+  lieferant?: Lieferant;
+}

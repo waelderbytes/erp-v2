@@ -1,9 +1,10 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/auth';
 import { Berechtigung, RbacGuard } from '../../common/rbac';
 import { ArtikelService } from './artikel.service';
 import { ArtikelAnlegenDto } from './dto/artikel-anlegen.dto';
 import { ArtikelLieferantZuordnenDto } from './dto/artikel-lieferant-zuordnen.dto';
+import { ArtikelAktualisierenDto } from './dto/artikel-aktualisieren.dto';
 
 @Controller('artikel')
 @UseGuards(JwtAuthGuard, RbacGuard)
@@ -26,6 +27,12 @@ export class ArtikelController {
   @Berechtigung('artikelstamm', 'schreiben')
   anlegen(@Body() dto: ArtikelAnlegenDto) {
     return this.artikelService.anlegen(dto);
+  }
+
+  @Patch(':id')
+  @Berechtigung('artikelstamm', 'schreiben')
+  aktualisieren(@Param('id') id: string, @Body() dto: ArtikelAktualisierenDto) {
+    return this.artikelService.aktualisieren(id, dto);
   }
 
   @Post(':id/lieferant')

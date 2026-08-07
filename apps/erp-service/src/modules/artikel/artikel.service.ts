@@ -1,4 +1,4 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Artikel } from '../../database/entities/artikel.entity';
@@ -7,6 +7,7 @@ import { FirmaService } from '../firma/firma.service';
 import { ArtikelNummerService, KategorieOhneCodeError } from './artikel-nummer.service';
 import { ArtikelAnlegenDto } from './dto/artikel-anlegen.dto';
 import { ArtikelLieferantZuordnenDto } from './dto/artikel-lieferant-zuordnen.dto';
+import { ArtikelAktualisierenDto } from './dto/artikel-aktualisieren.dto';
 
 @Injectable()
 export class ArtikelService {
@@ -45,6 +46,8 @@ export class ArtikelService {
       hauptgruppeId: dto.hauptgruppeId ?? null,
       untergruppeId: dto.untergruppeId ?? null,
       bestandsgefuehrt: dto.artikelart !== 'dienstleistung' && (dto.bestandsgefuehrt ?? false),
+      einheit: dto.einheit ?? null,
+      eanGtin: dto.eanGtin ?? null,
       hersteller: dto.hersteller ?? null,
       herstellerArtikelnummer: dto.herstellerArtikelnummer ?? null,
     });
@@ -70,6 +73,36 @@ export class ArtikelService {
 
   find(id: string): Promise<Artikel | null> {
     return this.artikelRepo.findOneBy({ id });
+  }
+
+  async aktualisieren(id: string, dto: ArtikelAktualisierenDto): Promise<Artikel> {
+    const artikel = await this.artikelRepo.findOneBy({ id });
+    if (!artikel) {
+      throw new NotFoundException('Artikel nicht gefunden.');
+    }
+    if (dto.bezeichnung !== undefined) artikel.bezeichnung = dto.bezeichnung;
+    if (dto.beschreibung !== undefined) artikel.beschreibung = dto.beschreibung;
+    if (dto.einheit !== undefined) artikel.einheit = dto.einheit;
+    if (dto.eanGtin !== undefined) artikel.eanGtin = dto.eanGtin;
+    if (dto.hersteller !== undefined) artikel.hersteller = dto.hersteller;
+    if (dto.herstellerArtikelnummer !== undefined) artikel.herstellerArtikelnummer = dto.herstellerArtikelnummer;
+    // Wie beim Anlegen: Dienstleistungen sind nie bestandsgefuehrt, unabhaengig
+    // davon, was uebergeben wird - siehe gleiche Logik in anlegen().
+    if (dto.bestandsgefuehrt !== undefined) {
+      artikel.bestandsgefuehrt = artikel.artikelart !== 'dienstleistung' && dto.bestandsgefuehrt;
+    }
+    if (dto.aktiv !== undefined) artikel.aktiv = dto.aktiv;
+
+    try {
+      return await this.artikelRepo.save(artikel);
+    } catch (e) {
+      if ((e as { code?: string }).code === '23505') {
+        throw new ConflictException(
+          `Ein Artikel mit der Herstellerartikelnummer '${dto.herstellerArtikelnummer}' existiert bereits.`,
+        );
+      }
+      throw e;
+    }
   }
 
   // Legt die n:m-Zuordnung Artikel<->Lieferant an. Vorher gibt es keine Zeile,

@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ export function LieferantenListe() {
   const [ladend, setLadend] = useState(true);
   const [ladeFehler, setLadeFehler] = useState<string | null>(null);
   const [dialogOffen, setDialogOffen] = useState(false);
+  const [suche, setSuche] = useState('');
 
   async function laden() {
     setLadend(true);
@@ -29,6 +30,14 @@ export function LieferantenListe() {
   useEffect(() => {
     laden();
   }, []);
+
+  const angezeigt = useMemo(() => {
+    const suchbegriff = suche.trim().toLowerCase();
+    if (!suchbegriff) return lieferanten;
+    return lieferanten.filter((l) =>
+      [l.lieferantennummer, l.firmenname].some((feld) => feld.toLowerCase().includes(suchbegriff)),
+    );
+  }, [lieferanten, suche]);
 
   return (
     <div className="space-y-4">
@@ -52,6 +61,8 @@ export function LieferantenListe() {
 
       {ladeFehler && <p className="text-sm text-destructive">{ladeFehler}</p>}
 
+      <Input placeholder="Suche nach Nummer oder Firmenname…" value={suche} onChange={(e) => setSuche(e.target.value)} className="max-w-sm" />
+
       <Table>
         <TableHeader>
           <TableRow>
@@ -68,14 +79,14 @@ export function LieferantenListe() {
               </TableCell>
             </TableRow>
           )}
-          {!ladend && lieferanten.length === 0 && (
+          {!ladend && angezeigt.length === 0 && (
             <TableRow>
               <TableCell colSpan={3} className="text-center text-muted-foreground">
-                Noch keine Lieferanten angelegt.
+                {lieferanten.length === 0 ? 'Noch keine Lieferanten angelegt.' : 'Keine Treffer für diese Suche.'}
               </TableCell>
             </TableRow>
           )}
-          {lieferanten.map((l) => (
+          {angezeigt.map((l) => (
             <TableRow key={l.id}>
               <TableCell className="font-mono">{l.lieferantennummer}</TableCell>
               <TableCell>{l.firmenname}</TableCell>

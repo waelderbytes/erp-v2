@@ -10,6 +10,41 @@ im vollen Sinn.
 
 ## [Unreleased]
 
+### UI-Politur Warenwirtschaft, Fokus Artikel (07.08.2026)
+- Backend: `PATCH /artikel/:id` (neuer Endpoint, bisher konnte ein Artikel nach
+  dem Anlegen gar nicht mehr geaendert werden) - `ArtikelAktualisierenDto`,
+  bewusst ohne artikelart/hauptgruppeId/untergruppeId (Artikelart-Wechsel nach
+  dem Anlegen wuerde die Bestandsfuehrungs-/Nummernkreislogik verkomplizieren,
+  fuer die erste Version nicht vorgesehen)
+- Backend: `einheit`/`eanGtin` fehlten bisher komplett in
+  `ArtikelAnlegenDto`, obwohl beide Spalten laengst in der Artikel-Entity
+  existierten - ergaenzt
+- Frontend: neue Artikel-Detailseite (`routes/artikel/ArtikelDetail.tsx`,
+  Route `/artikel/:id`) mit vier Tabs (`components/ui/tabs.tsx` neu gebaut,
+  Radix-Dependency war installiert, aber noch nicht als Komponente
+  verdrahtet) - Stammdaten (Bearbeiten-Formular), Bestand (Anzeige +
+  Wareneingang/Warenausgang direkt buchen), Preise (Anzeige +
+  Preis anlegen), Lieferanten (Zuordnung + Favorit setzen). Ersetzt damit fuer
+  den Artikel-Kontext die bisherige Notwendigkeit, zwischen Artikel-, Lager-
+  und Preise-Seite hin- und herzuspringen - Wunsch aus der ersten UI-Runde
+- Frontend: Artikel-Anlegen-Dialog um Beschreibung, Einheit, EAN/GTIN,
+  Bestandsgefuehrt-Checkbox erweitert (vorher nur Artikelart/Bezeichnung/
+  Hersteller/Hersteller-Art.-Nr.)
+- Frontend: Artikel-Tabelle jetzt sortierbar (Klick auf Spaltenkopf) und
+  durchsuchbar (Freitext ueber Nummer/Bezeichnung/Hersteller/EAN); Zeilen
+  klickbar -> Detailseite. Kunden- und Lieferanten-Tabelle ebenfalls
+  durchsuchbar gemacht (gleiches Bedienmuster)
+- Bei der Recherche fuer diese Aenderung eine bestehende Luecke entdeckt und
+  dokumentiert (nicht Teil dieser Aenderung, siehe module-uebersicht.md):
+  die kategoriebasierte Artikelnummern-Vergabe (Schema 'kategorie') ist im
+  Backend-Code fertig implementiert (`ArtikelNummerService`,
+  `FirmaService.setArtikelnummernSchema()`), aber es existiert kein
+  `firma.controller.ts` und keine Artikelkategorie-Endpoints - das Schema ist
+  aktuell technisch nicht erreichbar, gehoert zum noch offenen Modul
+  "Stammdaten/System-Einstellungen"
+- Verifiziert lokal: erp-service `tsc --noEmit` + `nest build`, web `tsc
+  --noEmit` + `vite build` (Bundle 359 KB / 110 KB gzip), alle fehlerfrei
+
 ### Frontend: UI fuer Benutzerverwaltung + Zeiterfassung (07.08.2026)
 - Neue Nav-Gruppen "Zeiterfassung" und "Verwaltung" in apps/web (siehe
   Layout.tsx) - "Verwaltung" (Benutzer) ist bewusst nur fuer Owner/

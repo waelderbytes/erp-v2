@@ -3,6 +3,7 @@ import { Login } from '@/routes/Login';
 import { Layout } from '@/components/Layout';
 import { RequireAuth } from '@/components/RequireAuth';
 import { ArtikelListe } from '@/routes/artikel/ArtikelListe';
+import { ArtikelDetail } from '@/routes/artikel/ArtikelDetail';
 import { KundenListe } from '@/routes/kunden/KundenListe';
 import { LieferantenListe } from '@/routes/lieferanten/LieferantenListe';
 import { LagerUebersicht } from '@/routes/lager/LagerUebersicht';
@@ -20,6 +21,7 @@ export default function App() {
           <Route element={<Layout />}>
             <Route index element={<Navigate to="/artikel" replace />} />
             <Route path="artikel" element={<ArtikelListe />} />
+            <Route path="artikel/:id" element={<ArtikelDetail />} />
             <Route path="kunden" element={<KundenListe />} />
             <Route path="lieferanten" element={<LieferantenListe />} />
             <Route path="lager" element={<LagerUebersicht />} />

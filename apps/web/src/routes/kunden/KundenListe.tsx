@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,7 @@ export function KundenListe() {
   const [ladend, setLadend] = useState(true);
   const [ladeFehler, setLadeFehler] = useState<string | null>(null);
   const [dialogOffen, setDialogOffen] = useState(false);
+  const [suche, setSuche] = useState('');
 
   async function laden() {
     setLadend(true);
@@ -34,6 +35,14 @@ export function KundenListe() {
   useEffect(() => {
     laden();
   }, []);
+
+  const angezeigt = useMemo(() => {
+    const suchbegriff = suche.trim().toLowerCase();
+    if (!suchbegriff) return kunden;
+    return kunden.filter((k) =>
+      [k.kundennummer, kundenName(k)].some((feld) => feld.toLowerCase().includes(suchbegriff)),
+    );
+  }, [kunden, suche]);
 
   return (
     <div className="space-y-4">
@@ -57,6 +66,8 @@ export function KundenListe() {
 
       {ladeFehler && <p className="text-sm text-destructive">{ladeFehler}</p>}
 
+      <Input placeholder="Suche nach Nummer oder Name…" value={suche} onChange={(e) => setSuche(e.target.value)} className="max-w-sm" />
+
       <Table>
         <TableHeader>
           <TableRow>
@@ -74,14 +85,14 @@ export function KundenListe() {
               </TableCell>
             </TableRow>
           )}
-          {!ladend && kunden.length === 0 && (
+          {!ladend && angezeigt.length === 0 && (
             <TableRow>
               <TableCell colSpan={4} className="text-center text-muted-foreground">
-                Noch keine Kunden angelegt.
+                {kunden.length === 0 ? 'Noch keine Kunden angelegt.' : 'Keine Treffer für diese Suche.'}
               </TableCell>
             </TableRow>
           )}
-          {kunden.map((k) => (
+          {angezeigt.map((k) => (
             <TableRow key={k.id}>
               <TableCell className="font-mono">{k.kundennummer}</TableCell>
               <TableCell>{kundenName(k)}</TableCell>

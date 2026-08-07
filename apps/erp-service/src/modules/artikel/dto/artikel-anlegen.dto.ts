@@ -27,6 +27,14 @@ export class ArtikelAnlegenDto {
 
   @IsOptional()
   @IsString()
+  einheit?: string;
+
+  @IsOptional()
+  @IsString()
+  eanGtin?: string;
+
+  @IsOptional()
+  @IsString()
   hersteller?: string;
 
   @IsOptional()
