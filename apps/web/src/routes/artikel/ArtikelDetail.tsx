@@ -26,12 +26,28 @@ import {
 // nach dem Muster aus ERP v1 (waelderbytes-suite, ArtikelWizard.tsx): der erste
 // Tab "Stammdaten" speichert den Artikel, danach schalten sich die weiteren Tabs
 // (Bestand/Preise/Lieferanten/Sprachen) frei - kein separater Anlegen-Dialog mehr.
+//
+// UX-Entscheidung (08.08.2026): Tabs sind von Anfang an ALLE sichtbar (nicht erst
+// nach dem Speichern eingeblendet), aber gesperrt (disabled + Tooltip), solange kein
+// Artikel existiert - technisch zwingend, da Preise/Lieferanten-Zuordnung/Sprachen/
+// Bestand eigene Tabellen mit artikel_id als Fremdschluessel sind, Bestand zusaetzlich
+// eine echte, race-condition-gesicherte Lagerbuchung (siehe architecture.md) und daher
+// kein reiner "Entwurf" sein kann. Zusaetzlich Weiter/Zurueck-Buttons unterhalb der
+// Tabs fuer eine gefuehrte Assistenten-Optik; nach dem ersten Speichern der
+// Stammdaten springt die Ansicht automatisch zum naechsten Tab.
+interface ArtikelTabDef {
+  value: string;
+  label: string;
+  erfordertArtikel: boolean;
+}
+
 export function ArtikelDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const istNeu = id === 'neu';
   const [artikel, setArtikel] = useState<Artikel | null>(null);
   const [ladeFehler, setLadeFehler] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('stammdaten');
 
   async function laden() {
     if (!id || istNeu) return;
@@ -54,6 +70,23 @@ export function ArtikelDetail() {
     return <p className="text-sm text-muted-foreground">Lädt…</p>;
   }
 
+  // "Bestand" bleibt vorerst nur sichtbar, wenn bereits bekannt ist, dass der
+  // Artikel bestandsgefuehrt ist (separater, noch offener Roadmap-Punkt: "Bestand-Tab
+  // immer sichtbar, nur ausgegraut wenn nicht bestandsgefuehrt"). Alle anderen Tabs
+  // sind immer in der Liste, aber ggf. disabled.
+  const tabs: ArtikelTabDef[] = [
+    { value: 'stammdaten', label: 'Stammdaten', erfordertArtikel: false },
+    ...(artikel?.bestandsgefuehrt ? [{ value: 'bestand', label: 'Bestand', erfordertArtikel: true }] : []),
+    { value: 'preise', label: 'Preise', erfordertArtikel: true },
+    { value: 'lieferanten', label: 'Lieferanten', erfordertArtikel: true },
+    { value: 'sprachen', label: 'Sprachen', erfordertArtikel: true },
+  ];
+
+  const aktuellerIndex = tabs.findIndex((t) => t.value === activeTab);
+  const vorherigerTab = tabs[aktuellerIndex - 1];
+  const naechsterTab = tabs[aktuellerIndex + 1];
+  const weiterGesperrt = !naechsterTab || (naechsterTab.erfordertArtikel && !artikel);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
@@ -66,13 +99,18 @@ export function ArtikelDetail() {
         </div>
       </div>
 
-      <Tabs defaultValue="stammdaten">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="stammdaten">Stammdaten</TabsTrigger>
-          {artikel?.bestandsgefuehrt && <TabsTrigger value="bestand">Bestand</TabsTrigger>}
-          {artikel && <TabsTrigger value="preise">Preise</TabsTrigger>}
-          {artikel && <TabsTrigger value="lieferanten">Lieferanten</TabsTrigger>}
-          {artikel && <TabsTrigger value="sprachen">Sprachen</TabsTrigger>}
+          {tabs.map((t) => (
+            <TabsTrigger
+              key={t.value}
+              value={t.value}
+              disabled={t.erfordertArtikel && !artikel}
+              title={t.erfordertArtikel && !artikel ? 'Bitte zuerst Stammdaten speichern' : undefined}
+            >
+              {t.label}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         <TabsContent value="stammdaten">
@@ -83,7 +121,12 @@ export function ArtikelDetail() {
               // Nach dem ERSTEN Speichern (Anlegen) auf die echte URL wechseln,
               // damit ein Reload nicht wieder im "neu"-Modus landet und die
               // anderen Tabs (die eine echte artikelId brauchen) sofort nutzbar sind.
-              if (warNeu) navigate(`/artikel/${a.id}`, { replace: true });
+              if (warNeu) {
+                navigate(`/artikel/${a.id}`, { replace: true });
+                // Gefuehrter Assistent: automatisch zum naechsten Tab springen,
+                // statt den Nutzer manuell klicken zu lassen.
+                setActiveTab(a.bestandsgefuehrt ? 'bestand' : 'preise');
+              }
             }}
           />
         </TabsContent>
@@ -108,10 +151,28 @@ export function ArtikelDetail() {
           </TabsContent>
         )}
       </Tabs>
+
+      <div className="flex justify-between pt-2">
+        <Button
+          type="button"
+          variant="outline"
+          disabled={!vorherigerTab}
+          onClick={() => vorherigerTab && setActiveTab(vorherigerTab.value)}
+        >
+          Zurück
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={weiterGesperrt}
+          onClick={() => naechsterTab && setActiveTab(naechsterTab.value)}
+        >
+          Weiter
+        </Button>
+      </div>
     </div>
   );
 }
-
 function StammdatenTab({
   artikel,
   onGespeichert,
