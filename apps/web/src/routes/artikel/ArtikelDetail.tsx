@@ -152,7 +152,7 @@ export function ArtikelDetail() {
         )}
       </Tabs>
 
-      <div className="flex justify-between pt-2">
+      <div className="flex gap-2 pt-2">
         <Button
           type="button"
           variant="outline"
