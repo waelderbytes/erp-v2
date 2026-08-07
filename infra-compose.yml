@@ -19,16 +19,16 @@
 
 services:
   traefik:
-    image: traefik:v3.1
+    # Bekannter Kompatibilitaetsbruch: Traefik <= v3.5 fragt beim Docker-Provider
+    # fest API-Version 1.24 an, neuere Docker-Engines (ab Docker 29, hier Server-
+    # API 1.55) lehnen das ab ('client version 1.24 is too old', beobachtet
+    # 08.08.2026 - siehe traefik/traefik#12253). Ein DOCKER_API_VERSION-Env-Var
+    # wird vom Docker-Provider dabei NICHT beruecksichtigt (bestaetigt getestet -
+    # Env kam im Container an, Fehler blieb trotzdem). Ab v3.6.x negoziiert
+    # Traefik die Docker-API-Version automatisch mit dem Daemon - das ist der
+    # eigentliche Fix, kein Workaround.
+    image: traefik:v3.6
     restart: unless-stopped
-    environment:
-      # Traefik v3.1 bringt einen Docker-Client mit, der standardmaessig eine sehr
-      # alte API-Version anfragt (1.24) - moderne Docker-Daemons (neuere Docker-
-      # Engine-Versionen) lehnen das inzwischen ab ('client version 1.24 is too
-      # old', beobachtet 08.08.2026). Explizite Versionsangabe erzwingt eine
-      # aktuelle, vom Daemon unterstuetzte API-Version statt der veralteten
-      # Traefik-Default-Negotiation.
-      - DOCKER_API_VERSION=1.44
     command:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
