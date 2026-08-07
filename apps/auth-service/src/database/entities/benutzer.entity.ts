@@ -22,6 +22,23 @@ export class Benutzer {
   @Column({ default: true })
   aktiv: boolean;
 
+  // Kiosk-Login (Wandtablet ohne vollen ERP-Zugang, siehe kiosk-auth.service.ts)
+  // - alle drei bewusst nullable, nur Mitarbeiter mit Kiosk-Zugriff bekommen das
+  // ueberhaupt gesetzt. personalnummer/rfidUid global eindeutig durchgesetzt per
+  // partiellem Unique-Index (Migration 0002), NULL bleibt erlaubt.
+  @Column({ nullable: true })
+  personalnummer: string | null;
+
+  // argon2id-Hash wie passwortHash, aber eigenes Feld - Passwort und PIN sind
+  // unabhaengig voneinander (siehe Migrationskommentar).
+  @Column({ name: 'pin_hash', nullable: true })
+  pinHash: string | null;
+
+  // RFID-Kartenleser-Anbindung vorbereitet, Hardware-Integration folgt spaeter
+  // (siehe Migrationskommentar).
+  @Column({ name: 'rfid_uid', nullable: true })
+  rfidUid: string | null;
+
   @ManyToMany(() => Rolle)
   @JoinTable({
     name: 'benutzer_rolle',

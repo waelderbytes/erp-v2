@@ -7,11 +7,12 @@ import { DataSource } from 'typeorm';
 import { Benutzer } from './entities/benutzer.entity';
 import { Rolle } from './entities/rolle.entity';
 import { Berechtigung } from './entities/berechtigung.entity';
+import { KioskGeraet } from './entities/kiosk-geraet.entity';
 
 export default new DataSource({
   type: 'postgres',
   url: process.env.DATABASE_URL || 'postgresql://erp:changeme@localhost:5432/erp_tenant',
-  entities: [Benutzer, Rolle, Berechtigung],
+  entities: [Benutzer, Rolle, Berechtigung, KioskGeraet],
   migrations: [__dirname + '/migrations/*.{ts,js}'], // .ts fuer lokalen ts-node-Lauf, .js fuer den kompilierten dist/-Lauf im Container (siehe migration:run:prod)
   synchronize: false, // GoBD/Audit: Schema-Aenderungen ausschliesslich per Migration, siehe CLAUDE.md
 });
