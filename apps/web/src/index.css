@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Farbwerte als HSL-Komponenten (ohne hsl()-Wrapper) - Standard-shadcn-Konvention,
+   damit Tailwind Opacity-Modifier (z.B. bg-primary/50) funktionieren. Bewusst
+   neutral/gedeckt gehalten (kein "Google Material"- oder "Enterprise-Blau"-Look),
+   siehe Nutzerentscheidung fuer shadcn/ui (08.08.2026). White-Label-Theming je
+   gehostetem Kunden setzt spaeter genau an diesen Variablen an. */
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222 20% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 20% 12%;
+    --primary: 222 47% 20%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 210 20% 96%;
+    --secondary-foreground: 222 20% 12%;
+    --muted: 210 20% 96%;
+    --muted-foreground: 215 15% 45%;
+    --accent: 210 20% 96%;
+    --accent-foreground: 222 20% 12%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 214 20% 90%;
+    --input: 214 20% 90%;
+    --ring: 222 47% 20%;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}

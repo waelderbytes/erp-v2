@@ -10,6 +10,30 @@ im vollen Sinn.
 
 ## [Unreleased]
 
+### Frontend: erste UI fuer Warenwirtschaft (08.08.2026)
+- UI-Bibliothek entschieden: shadcn/ui + Tailwind (Details siehe
+  docs/module-uebersicht.md Abschnitt 1)
+- apps/web von reinem Platzhalter zu echter React-App: Tailwind-Setup inkl.
+  CSS-Variablen-Theming (`src/index.css`), handgeschriebene shadcn-Basis-
+  komponenten (Button, Input, Label, Card, Table, Dialog, Select) unter
+  `src/components/ui/`
+- React Router: `/login` oeffentlich, alle anderen Routen hinter `RequireAuth`
+  (clientseitige Pruefung auf gueltiges Access-Token)
+- Auth (`src/lib/auth.ts`): Login, Logout, Access-/Refresh-Token in
+  localStorage, automatischer Refresh-Versuch bei 401 bevor ausgeloggt wird
+  (Access-Token laeuft nach 15 Minuten ab)
+- API-Client (`src/lib/api.ts`): zentraler fetch-Wrapper gegen `/api/*`
+- Screens (Liste + Anlegen): Artikel, Kunden, Lieferanten, Lager (inkl.
+  Wareneingang/Warenausgang buchen + Bestandsanzeige je Artikel), Bestellungen
+  (inkl. Bestellen-Aktion + Wareneingang je Position), Preise (inkl. "Preis
+  ermitteln"-Testwerkzeug)
+- Technische Schuld bewusst dokumentiert: `api-gateway` ist weiterhin ein leerer
+  Stub, nginx im web-Container uebernimmt vorerst das Routing zu
+  auth-service/erp-service (siehe apps/web/nginx.conf) - echtes Gateway mit
+  Auth-Vorpruefung/Rate-Limiting folgt vor Produktivbetrieb mehrerer Tenants
+- Verifiziert lokal: npx tsc --noEmit + npm run build (tsc + vite build)
+  erfolgreich, Bundle 324 KB / 103 KB gzip
+
 ### Artikel: Herstellerartikelnummer ergaenzt (08.08.2026)
 - Nutzeranfrage: Herstellerartikelnummer (MPN) fehlte komplett, obwohl in
   feldkatalog.md Abschnitt 1.2 vorgesehen - nie umgesetzt

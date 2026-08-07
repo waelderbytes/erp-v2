@@ -41,6 +41,12 @@ konfigurierbare Zusatzfelder, statt alles hart zu codieren.
   mehrere Adressen/Ansprechpartner je Kunde/Lieferant, n:m-Zuordnung Artikel↔Lieferant mit
   Favoriten-Kennzeichen, mehrdimensionale Kundenbewertung (Sterne je konfigurierbarem
   Kriterium).
+- UI-Komponenten-Bibliothek entschieden (08.08.2026): **shadcn/ui + Tailwind**, wegen
+  modernerer/neutralerer Optik als MUI (Material-Look) oder Ant Design (klassischer
+  Enterprise-Dashboard-Look) und voller Kontrolle fürs spätere White-Label-Theming
+  (CSS-Variablen-basiert). Theme-Auswahl (hell/dunkel/Farbschema) wird pro Benutzer
+  möglich sein (nicht nur ein Tenant-weites Theme) - kommt als eigene UI zusammen mit
+  Firmendaten/Benutzerprofil.
 
 ## 2. Cross-Cutting Concerns (betreffen ALLE Module, nicht separat verhandelbar)
 
