@@ -11,6 +11,21 @@ im vollen Sinn.
 ## [Unreleased]
 
 ### Added (07.08.2026)
+
+### Added (08.08.2026) - Artikelstamm (erstes Fachmodul)
+- Neuer Service `erp-service`, eigene Migrations-Historie in derselben Tenant-DB
+- Nummernkreis-Engine implementiert (generisch, Row-Lock via `SELECT ... FOR UPDATE`,
+  siehe docs/architecture.md Abschnitt 6)
+- Kategoriebasierte Artikelnummern (XXX-YYY-lfd, Zaehler je Haupt-/Untergruppen-
+  Kombination) - `artikelkategorie` + `artikelkategorie_zuordnung`
+- Firma-Singleton mit hart durchgesetzter Sperre fuer `artikelnummern_schema` sobald
+  ein Artikel existiert (Verbesserung gegenueber ERP v1, siehe architecture.md)
+- Artikel-Entity + CRUD (anlegen/liste/find), `artikel_lieferant` n:m mit
+  Favoriten-Kennzeichen (Unique-Index: max. 1 Favorit je Artikel)
+- RBAC erstmals scharf geschaltet: JwtAuthGuard + echter Berechtigungs-Abgleich
+  (vorher TODO/hart abgelehnt) - Berechtigungen werden beim Login/Refresh ins JWT
+  gepackt (`libs/common` JwtStrategy/RbacGuard), `modul_key = 'artikelstamm'` mit
+  Sachbearbeiter (lesen+schreiben) und Lesend (lesen) verknuepft
 - Repo real angelegt (github.com/waelderbytes/erp-v2), erstes Grundgeruest gepusht
 - `docs/feldkatalog.md`: Feldkatalog Artikel/Kunde/Lieferant, Dokumentenanhaenge
 - `docs/rbac-rollenkatalog.md`: 5 System-Rollen (Owner, Administrator, Sachbearbeiter,

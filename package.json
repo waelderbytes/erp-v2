@@ -5,6 +5,7 @@
   "description": "WaelderBytes ERP V2 - Nx-Monorepo (NestJS Backend-Services, React-PWA Frontend)",
   "scripts": {
     "dev:auth-service": "npm run start:dev --workspace=apps/auth-service",
+    "dev:erp-service": "npm run start:dev --workspace=apps/erp-service",
     "dev:api-gateway": "npm run start:dev --workspace=apps/api-gateway",
     "dev:web": "npm run dev --workspace=apps/web"
   },

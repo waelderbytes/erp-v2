@@ -48,7 +48,7 @@ export class AuthService {
   async login(dto: LoginDto) {
     const benutzer = await this.benutzerRepo.findOne({
       where: { email: dto.email },
-      relations: ['rollen'],
+      relations: ['rollen', 'rollen.berechtigungen'],
     });
 
     // Bewusst dieselbe Fehlermeldung fuer "Benutzer existiert nicht" und "Passwort
@@ -68,7 +68,7 @@ export class AuthService {
     const payload = this.tokenService.pruefenRefreshToken(refreshToken);
     const benutzer = await this.benutzerRepo.findOne({
       where: { id: payload.sub },
-      relations: ['rollen'],
+      relations: ['rollen', 'rollen.berechtigungen'],
     });
     if (!benutzer || !benutzer.aktiv) {
       throw new UnauthorizedException('Ungueltiger Refresh-Token.');

@@ -1,0 +1,35 @@
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../../common/auth';
+import { Berechtigung, RbacGuard } from '../../common/rbac';
+import { ArtikelService } from './artikel.service';
+import { ArtikelAnlegenDto } from './dto/artikel-anlegen.dto';
+
+@Controller('artikel')
+@UseGuards(JwtAuthGuard, RbacGuard)
+export class ArtikelController {
+  constructor(private readonly artikelService: ArtikelService) {}
+
+  @Get()
+  @Berechtigung('artikelstamm', 'lesen')
+  liste() {
+    return this.artikelService.liste();
+  }
+
+  @Get(':id')
+  @Berechtigung('artikelstamm', 'lesen')
+  find(@Param('id') id: string) {
+    return this.artikelService.find(id);
+  }
+
+  @Post()
+  @Berechtigung('artikelstamm', 'schreiben')
+  anlegen(@Body() dto: ArtikelAnlegenDto) {
+    return this.artikelService.anlegen(dto);
+  }
+
+  @Post(':id/lieferant/:zuordnungId/favorit')
+  @Berechtigung('artikelstamm', 'schreiben')
+  favoritSetzen(@Param('id') id: string, @Param('zuordnungId') zuordnungId: string) {
+    return this.artikelService.lieferantAlsFavoritSetzen(id, zuordnungId);
+  }
+}

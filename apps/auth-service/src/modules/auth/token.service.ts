@@ -6,9 +6,11 @@ import { Benutzer } from '../../database/entities/benutzer.entity';
 export interface JwtPayload {
   sub: string; // benutzer.id
   email: string;
-  rollen: string[]; // Rollen-Namen, siehe docs/rbac-rollenkatalog.md - fuer den RBAC-Guard
-  // ohne DB-Roundtrip pro Request. Bei Rollenaenderung muss der Benutzer sich neu
-  // einloggen bzw. Refresh-Token holen (Token-TTL bewusst kurz, siehe .env.example).
+  rollen: string[]; // Rollen-Namen, siehe docs/rbac-rollenkatalog.md
+  berechtigungen: string[]; // "modulKey:aktion", fuer libs/common RbacGuard - siehe
+  // docs/rbac-rollenkatalog.md Abschnitt 1. Owner/Administrator brauchen hier nichts
+  // (RbacGuard laesst sie ueber die Rollen-Pruefung durch), fuer alle anderen Rollen
+  // ist das die tatsaechliche Grundlage der Rechtepruefung.
 }
 
 @Injectable()
@@ -19,10 +21,15 @@ export class TokenService {
   ) {}
 
   private payloadFuer(benutzer: Benutzer): JwtPayload {
+    const rollen = benutzer.rollen ?? [];
+    const berechtigungen = rollen.flatMap((rolle) =>
+      (rolle.berechtigungen ?? []).map((b) => `${b.modulKey}:${b.aktion}`),
+    );
     return {
       sub: benutzer.id,
       email: benutzer.email,
-      rollen: (benutzer.rollen ?? []).map((r) => r.name),
+      rollen: rollen.map((r) => r.name),
+      berechtigungen: [...new Set(berechtigungen)],
     };
   }
 
