@@ -5,8 +5,8 @@
 // (siehe CLAUDE.md / Regeln.md Abschnitt 4).
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class InitialSchema0001 implements MigrationInterface {
-  name = 'InitialSchema0001';
+export class InitialSchema1786091161720 implements MigrationInterface {
+  name = 'InitialSchema1786091161720';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS pgcrypto`); // fuer gen_random_uuid()
