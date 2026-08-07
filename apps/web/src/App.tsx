@@ -21,7 +21,11 @@ export default function App() {
           <Route element={<Layout />}>
             <Route index element={<Navigate to="/artikel" replace />} />
             <Route path="artikel" element={<ArtikelListe />} />
-            <Route path="artikel/neu" element={<ArtikelDetail />} />
+            {/* Bewusst KEINE separate Route "artikel/neu" mehr: die hatte keinen
+                :id-Param, wodurch useParams().id in ArtikelDetail bei /artikel/neu
+                "undefined" statt "neu" lieferte -> istNeu wurde faelschlich false
+                -> ewiges "Laedt..." ohne Request/Fehler (Bug aus session-handoff.md).
+                "artikel/:id" matcht /artikel/neu ebenfalls und liefert korrekt id="neu". */}
             <Route path="artikel/:id" element={<ArtikelDetail />} />
             <Route path="kunden" element={<KundenListe />} />
             <Route path="lieferanten" element={<LieferantenListe />} />
