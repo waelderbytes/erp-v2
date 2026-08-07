@@ -37,7 +37,7 @@ Getroffene Entscheidung: **Hybrid-Modell**.
 | `beschreibung` | i18n-text | nein | Langtext |
 | `hauptgruppe_id` | FK | ja | Verweis Artikelgruppe (Hierarchie) |
 | `untergruppe_id` | FK | nein | Verweis Artikel-Untergruppe |
-| `einheit` | enum/FK | ja | Basis-Mengeneinheit (Stück, kg, m, h, ...) |
+| `einheit_id` | FK | ja (DB), aktuell nullable im DTO | Basis-Mengeneinheit, echte FK auf eigene `einheit`-Tabelle seit 08.08.2026 (vorher Freitext) - siehe module-uebersicht.md |
 | `ean_gtin` | string | nein | Barcode, falls vorhanden |
 | `steuersatz_id` | FK | ja | Verweis Steuersatz (0/7/19 %), unabhängig vom Kleinunternehmer-Flag der Firma |
 | `aktiv` | boolean | ja | Sperrkennzeichen, Default true |

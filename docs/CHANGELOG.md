@@ -10,6 +10,29 @@ im vollen Sinn.
 
 ## [Unreleased]
 
+### Einheiten-Modul + Such-/Anlegen-Dropdown + Kurztext-Vorschlaege (08.08.2026)
+- Nutzerentscheidung: Einheit im Artikel-Wizard soll konsistent/erweiterbar
+  sein statt Freitext -> echtes Einheiten-Modul (Vorbild ERP v1) statt
+  statischer Frontend-Liste gewaehlt (zieht kleinen Teil des noch offenen
+  Moduls "Stammdaten/System-Einstellungen" vor)
+- Backend: neue Tabelle `einheit` (code/name/aktiv/dezimalstellen) inkl.
+  Audit-Trigger und Seed gaengiger Standard-Einheiten (Migration 0009);
+  `GET/POST /einheiten`, `DELETE /einheiten/:id` (Soft-Delete); modul_key
+  vorerst `artikelstamm`
+- Backend: `artikel.einheit` (Freitext) ersetzt durch `artikel.einheit_id`
+  als echte FK auf `einheit.id` (Migration 0010), Bestandsdaten per
+  Code-Abgleich automatisch migriert
+- Frontend: neue generische Komponente `SearchCreateDropdown` (tippen
+  filtert, "+ anlegen" bei keinem Treffer) 1:1 nach ERP-v1-Vorbild - bewusst
+  domainfrei, Ausgangspunkt fuer kuenftige Dropdowns
+- Frontend: Einheit-Feld nutzt das neue Dropdown inkl. Anlegen-Popup
+  (Code/Name/Nachkommastellen) und Deaktivieren direkt aus der Liste
+- Frontend: Kurztext zeigt waehrend des Tippens Vorschlaege aus vorhandenen
+  Artikeln (Duplikat-Vermeidung), reine Anzeige-Hilfe, keine Pflichtauswahl
+- Verifiziert lokal: erp-service (`npm install --ignore-scripts`,
+  `tsc --noEmit`, `nest build`), web (`tsc --noEmit`, `vite build`) - alle
+  fehlerfrei. Commits `c9cc6d8` (Backend), `cd556b5` (Frontend), gepusht
+
 ### Artikel-Assistent: Tabs sichtbar + Weiter/Zurueck-Fuehrung (08.08.2026)
 - Nutzerwunsch: geführtere UX beim Artikel-Anlegen, ohne die
   Speichern-zuerst-Notwendigkeit aufzugeben (Preise/Lieferant-Zuordnung/
