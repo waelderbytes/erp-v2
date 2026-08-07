@@ -39,7 +39,7 @@ Getroffene Entscheidung: **Hybrid-Modell**.
 | `untergruppe_id` | FK | nein | Verweis Artikel-Untergruppe |
 | `einheit_id` | FK | ja (DB), aktuell nullable im DTO | Basis-Mengeneinheit, echte FK auf eigene `einheit`-Tabelle seit 08.08.2026 (vorher Freitext) - siehe module-uebersicht.md |
 | `ean_gtin` | string | nein | Barcode, falls vorhanden |
-| `steuersatz_id` | FK | ja | Verweis Steuersatz (0/7/19 %), unabhängig vom Kleinunternehmer-Flag der Firma |
+| `steuersatz_id` | FK | ja (echte FK seit Migration 0015) | Verweis Steuersatz (0/7/19 %, Tabelle `steuersatz`, Migration 0014), unabhängig vom Kleinunternehmer-Flag der Firma - erledigt 08.08.2026, siehe module-uebersicht.md |
 | `aktiv` | boolean | ja | Sperrkennzeichen, Default true |
 | `bestandsgefuehrt` | boolean | ja | steuert, ob Lagerverwaltung greift (bei `dienstleistung` immer false) |
 | `custom_fields` | JSONB | nein | siehe Abschnitt 0 |

@@ -10,6 +10,45 @@ im vollen Sinn.
 
 ## [Unreleased]
 
+### Modul Stammdaten/System-Einstellungen (08.08.2026)
+- Nutzerentscheidung: erstmal 1 Firma (kein Mehrfirmen-Umbau) - Firma bleibt
+  Singleton (id=1)
+- Migration 0014: neue Tabelle `steuersatz` (Bezeichnung/Satz/aktiv/
+  ist_standard), Seed 19%/7%/0% (Regelsteuersatz = Standard)
+- Migration 0015: `artikel.steuersatz_id` als echte Pflicht-FK (vorher nur
+  ein Kommentar im Entity-Code) - Backfill bestehender Artikel auf den
+  Standard-Steuersatz, danach `NOT NULL`. Damit ist die letzte in
+  feldkatalog.md offene Pflichtfeld-Lücke geschlossen
+- Migration 0016: `firma` um echte Firmenstammdaten erweitert (Name,
+  Anschrift, USt-IdNr., Steuernummer, Telefon, E-Mail,
+  `kleinunternehmer`-Flag § 19 UStG, Default `true`)
+- Neue Endpoints: `GET/PATCH /firma`, `POST /firma/artikelnummern-schema`,
+  `PATCH /firma/artikelnummern-stellen`, `GET/POST/PATCH /steuersaetze`,
+  `GET/PATCH /nummernkreise/:entityKey` - alle unter neuem RBAC-`modul_key`
+  `stammdaten` (siehe rbac-rollenkatalog.md), ohne explizite Rollenvergabe
+  praktisch Owner/Administrator vorbehalten (RbacGuard-Bypass)
+- `NummernkreisService.aktualisieren()`: Präfix/Stellenanzahl jederzeit
+  änderbar, Startwert nur solange der Kreis unbenutzt ist (`next_value ===
+  start_value`), siehe architecture.md Abschnitt 6
+- Frontend: neue Seite „Stammdaten“ (Firma/Steuersätze/Nummernkreise-Tabs),
+  Steuersatz-Pflichtfeld-Dropdown im Artikel-Stammdaten-Tab (vorbelegt mit
+  Standard-Steuersatz beim Neuanlegen)
+- Verifiziert lokal: erp-service (`tsc --noEmit`, `nest build`), web
+  (`tsc --noEmit`, `vite build`) - alle fehlerfrei
+
+### Reset- und Seed-Skript für Testdaten (08.08.2026)
+- `scripts/reset-testdaten.sql`: leert nur Bewegungsdaten (Artikel, Kunden,
+  Lieferanten, Lagerbestände/-bewegungen, Bestellungen) - Firma, Einheiten,
+  Steuersätze, Nummernkreis-Konfiguration und Lager-Stammdaten bleiben
+  erhalten, `nummernkreis.next_value` wird auf den Startwert zurückgesetzt.
+  Audit-Log wird NICHT pauschal geleert (bewusst unveränderlich, siehe
+  architecture.md Abschnitt 5) - nur die Einträge zu den geleerten Tabellen
+  werden scoped gelöscht
+- `apps/erp-service/src/database/seed-testdaten.ts`
+  (`npm run seed:testdaten` / `seed:testdaten:prod`): legt Testdaten über die
+  echten Services an (Nummernkreis-Vergabe, Pflichtfelder), jederzeit
+  wiederholt ausführbar, keine rohen SQL-Inserts
+
 ### Letzte Feldkatalog-Lücken bei Artikel nachgezogen (08.08.2026)
 - Migration 0013: `gewicht_kg`, `laenge_mm`/`breite_mm`/`hoehe_mm`,
   `mindestbestand` - alle optional (Standard-Erweiterungsfelder laut

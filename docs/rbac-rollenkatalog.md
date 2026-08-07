@@ -11,9 +11,17 @@ Datensatz-Ebene) vorwegzunehmen. Ergänzt `architecture.md` (Cross-Cutting Conce
   Abschnitt 2) sind vordefiniert und nicht löschbar; ein Tenant kann zusätzlich eigene
   Rollen anlegen (spätere Ausbaustufe, nicht Teil des ersten Auth-Codes).
 - **`berechtigung`**: granularer Rechte-Katalog je Modul: `modul_key` (z. B. "artikelstamm",
-  "kunden", "lager", "zeiterfassung"), `aktion` (`lesen` / `schreiben` / `loeschen` /
-  `administrieren`). `administrieren` meint modul-eigene Einstellungen (z. B. Nummernkreis
-  für Artikel), nicht System-weite Einstellungen.
+  "kunden", "lager", "zeiterfassung", seit 08.08.2026 auch "stammdaten" - siehe unten),
+  `aktion` (`lesen` / `schreiben` / `loeschen` / `administrieren`). `administrieren` meint
+  modul-eigene Einstellungen (z. B. Nummernkreis für Artikel), nicht System-weite
+  Einstellungen.
+- **`modul_key` "stammdaten"** (neu, Modul Stammdaten/System-Einstellungen): deckt
+  Firma-/Steuersatz-/Nummernkreis-Endpoints ab (`firma.controller.ts`,
+  `steuersatz.controller.ts`, `nummernkreis.controller.ts`). Bekommt aktuell KEINE
+  Standard-Rolle explizit zugeteilt - dadurch praktisch Owner/Administrator vorbehalten
+  (RbacGuard-Bypass, siehe Abschnitt 1 "Durchsetzung"), passend zum "System-Einstellungen"
+  aus der Owner-Zeile in Abschnitt 2. Bei Bedarf kann "stammdaten:lesen" spaeter gezielt an
+  z. B. Sachbearbeiter vergeben werden, ohne Codeänderung.
 - **`rolle_berechtigung`**: m:n zwischen Rolle und Berechtigung.
 - **`benutzer_rolle`**: m:n zwischen Benutzer und Rolle – ein Benutzer kann mehrere Rollen
   gleichzeitig haben (z. B. "Sachbearbeiter Warenwirtschaft" + "Lesend Finanzen").
