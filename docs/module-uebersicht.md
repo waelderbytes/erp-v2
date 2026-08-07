@@ -60,7 +60,7 @@ konfigurierbare Zusatzfelder, statt alles hart zu codieren.
 ### Fundament (Phase 0)
 | Modul | Status | Beschreibung |
 |---|---|---|
-| Auth/Benutzerverwaltung | 🚧 Grundgerüst vorhanden | Login, Tenant-Verwaltung, Rollen. Eigener NestJS-Auth-Service pro Tenant-Deployment (Passport.js + JWT), kein zentraler IdP/Keycloak – Entscheidung 07.08.2026, siehe architecture.md Abschnitt 1 |
+| Auth/Benutzerverwaltung | 🚧 Grundfunktionen implementiert | Bootstrap/Login/Refresh, argon2id, Benutzer/Rolle/Berechtigung-Schema inkl. Audit-Log-Trigger (Migration 0001). Eigener NestJS-Auth-Service pro Tenant-Deployment, kein zentraler IdP/Keycloak. Noch offen: echte Benutzerverwaltung (Administrator legt Benutzer an), RBAC-Guard-Feinabgleich gegen rolle_berechtigung |
 | Stammdaten/System-Einstellungen | ⬜ offen | Firmenstammdaten, Nummernkreise, Artikelnummern-Schema "einfach"/"kategorie" (gesperrt sobald erster Artikel existiert, siehe architecture.md Abschnitt 6), Steuersätze, mehrere Firmen/Niederlassungen, Kleinunternehmer-Flag (§19 UStG) |
 | Nummernkreis-Engine | ✅ Konzept festgelegt | Row-Lock (`SELECT ... FOR UPDATE`) + strikte Trennung Vorschlag/Reservierung, siehe architecture.md Abschnitt 6 (Referenz: eigenes ERP v1) |
 

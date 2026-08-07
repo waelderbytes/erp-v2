@@ -10,6 +10,24 @@ im vollen Sinn.
 
 ## [Unreleased]
 
+### Added (07.08.2026)
+- Repo real angelegt (github.com/waelderbytes/erp-v2), erstes Grundgeruest gepusht
+- `docs/feldkatalog.md`: Feldkatalog Artikel/Kunde/Lieferant, Dokumentenanhaenge
+- `docs/rbac-rollenkatalog.md`: 5 System-Rollen (Owner, Administrator, Sachbearbeiter,
+  Lesend, Aussendienst), modulweise Berechtigungen (lesen/schreiben/loeschen/administrieren)
+- Entscheidung: kein zentraler IdP/Keycloak, eigener JWT-Auth-Service pro Tenant-
+  Deployment (Passport.js, argon2id) - siehe architecture.md Abschnitt 1
+- Entscheidung: Hosting Hetzner Cloud CPX22, mehrere Tenant-Compose-Stacks auf
+  gemeinsamem Host statt 1-Server-pro-Tenant - siehe architecture.md Abschnitt 8
+- auth-service: echte Implementierung - Entities (Benutzer/Rolle/Berechtigung),
+  Migration 0001_initial_schema (Schema, Rollen-Seed, Audit-Log-Tabelle + generischer
+  DB-Trigger), Bootstrap-/Login-/Refresh-Endpoints, argon2id-Passwort-Hashing
+- libs/common/src/rbac: RBAC-Guard + @Berechtigung()-Decorator (Grundgeruest, echter
+  Abgleich gegen rolle_berechtigung folgt mit dem ersten Fach-Modul)
+- Hinweis: npm install/Build in dieser Session NICHT verifiziert (kein Node-
+  Dependency-Install durchgefuehrt) - vor erstem Deploy lokal/in Claude Code bauen und
+  testen
+
 ### Added
 - Projekt-Grundgerüst: Nx-Monorepo-Struktur (Platzhalter-Configs), Docker-Compose für
   lokale Entwicklung, `.env.example`
