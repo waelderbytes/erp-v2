@@ -1,11 +1,13 @@
 // Kernfelder gemaess docs/feldkatalog.md Abschnitt 1.1/1.2. i18n-Mehrsprachigkeit
 // (bezeichnung als uebersetzbares Feld) bewusst NICHT Teil dieser ersten Version -
 // aktuell einfaches String-Feld, i18n-Tabelle folgt als eigener Schritt (siehe
-// Offene Punkte in README dieses Moduls). Ebenso: steuersatz_id/einheit sind noch
-// keine FKs auf eigene Stammdaten-Tabellen (die gibt es noch nicht), sondern
-// einfache String-Platzhalter - wird nachgezogen, sobald das Modul
-// Stammdaten/System-Einstellungen existiert.
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+// Offene Punkte in README dieses Moduls). Ebenso: steuersatz_id ist noch keine
+// FK auf eine eigene Stammdaten-Tabelle (die gibt es noch nicht), sondern ein
+// einfacher String-Platzhalter - wird nachgezogen, sobald das Modul
+// Stammdaten/System-Einstellungen existiert. Ausnahme seit Migration 0010:
+// einheit_id ist bereits eine echte FK (siehe einheit.entity.ts).
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Einheit } from './einheit.entity';
 
 export type Artikelart = 'handelsware' | 'dienstleistung' | 'fertigungsartikel';
 
@@ -32,8 +34,17 @@ export class Artikel {
   @Column({ name: 'untergruppe_id', nullable: true })
   untergruppeId: string | null;
 
-  @Column({ nullable: true })
-  einheit: string | null;
+  // Migration 0010: vorher freies Textfeld, jetzt echte FK auf die
+  // einheit-Tabelle (Vorbild ERP v1, siehe einheit.entity.ts). @JoinColumn
+  // ist hier Pflicht, weil zusaetzlich die rohe FK-Spalte einheit_id direkt
+  // genutzt wird (siehe Regeln/Lektion in session-handoff.md: ohne
+  // @JoinColumn erwartet TypeORM sonst eine implizite Zusatzspalte).
+  @Column({ name: 'einheit_id', nullable: true })
+  einheitId: string | null;
+
+  @ManyToOne(() => Einheit, { nullable: true })
+  @JoinColumn({ name: 'einheit_id' })
+  einheit?: Einheit;
 
   @Column({ name: 'ean_gtin', nullable: true })
   eanGtin: string | null;

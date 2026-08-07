@@ -1,4 +1,4 @@
-import { IsBoolean, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsOptional, IsString, IsUUID } from 'class-validator';
 
 // Alle Felder optional - PATCH-Semantik, nur mitgeschickte Felder werden
 // geaendert (siehe artikel.service.ts aktualisieren()). Bewusst OHNE
@@ -17,8 +17,8 @@ export class ArtikelAktualisierenDto {
   beschreibung?: string;
 
   @IsOptional()
-  @IsString()
-  einheit?: string;
+  @IsUUID()
+  einheitId?: string;
 
   @IsOptional()
   @IsString()

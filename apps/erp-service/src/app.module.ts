@@ -22,6 +22,7 @@ import { Lagerbewegung } from './database/entities/lagerbewegung.entity';
 import { Bestellung } from './database/entities/bestellung.entity';
 import { Bestellposition } from './database/entities/bestellposition.entity';
 import { Artikelpreis } from './database/entities/artikelpreis.entity';
+import { Einheit } from './database/entities/einheit.entity';
 import { ArtikelModule } from './modules/artikel/artikel.module';
 import { FirmaModule } from './modules/firma/firma.module';
 import { NummernkreisModule } from './modules/nummernkreis/nummernkreis.module';
@@ -30,6 +31,7 @@ import { LieferantModule } from './modules/lieferant/lieferant.module';
 import { LagerModule } from './modules/lager/lager.module';
 import { EinkaufModule } from './modules/einkauf/einkauf.module';
 import { PreisfindungModule } from './modules/preisfindung/preisfindung.module';
+import { EinheitModule } from './modules/einheit/einheit.module';
 
 @Module({
   imports: [
@@ -39,7 +41,7 @@ import { PreisfindungModule } from './modules/preisfindung/preisfindung.module';
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         url: config.get('DATABASE_URL'),
-        entities: [Artikel, ArtikelUebersetzung, ArtikelLieferant, Artikelkategorie, ArtikelkategorieZuordnung, Firma, Nummernkreis, Kunde, KundeAdresse, KundeKontakt, KundeBewertung, Bewertungskriterium, Lieferant, LieferantAdresse, LieferantKontakt, Lager, Lagerbestand, Lagerbewegung, Bestellung, Bestellposition, Artikelpreis],
+        entities: [Artikel, ArtikelUebersetzung, ArtikelLieferant, Artikelkategorie, ArtikelkategorieZuordnung, Firma, Nummernkreis, Kunde, KundeAdresse, KundeKontakt, KundeBewertung, Bewertungskriterium, Lieferant, LieferantAdresse, LieferantKontakt, Lager, Lagerbestand, Lagerbewegung, Bestellung, Bestellposition, Artikelpreis, Einheit],
         synchronize: false, // Schema ausschliesslich per Migration, siehe CLAUDE.md
       }),
     }),
@@ -51,6 +53,7 @@ import { PreisfindungModule } from './modules/preisfindung/preisfindung.module';
     LagerModule,
     EinkaufModule,
     PreisfindungModule,
+    EinheitModule,
   ],
 })
 export class AppModule {}

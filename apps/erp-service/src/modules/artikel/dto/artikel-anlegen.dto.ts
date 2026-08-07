@@ -26,8 +26,8 @@ export class ArtikelAnlegenDto {
   bestandsgefuehrt?: boolean;
 
   @IsOptional()
-  @IsString()
-  einheit?: string;
+  @IsUUID()
+  einheitId?: string;
 
   @IsOptional()
   @IsString()
