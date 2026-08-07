@@ -1,8 +1,8 @@
 # erp-service
 
-Warenwirtschaft-Module: Artikelstamm + Kunden-/Lieferantenstamm + Lagerverwaltung
-(siehe docs/module-uebersicht.md Phase 1). Nutzt dieselbe Tenant-DB wie
-auth-service, eigene Migrations-Historie (migrationsTableName
+Warenwirtschaft-Module: Artikelstamm + Kunden-/Lieferantenstamm + Lagerverwaltung +
+Einkauf/Bestellwesen (siehe docs/module-uebersicht.md Phase 1). Nutzt dieselbe
+Tenant-DB wie auth-service, eigene Migrations-Historie (migrationsTableName
 "migrations_erp_service").
 
 ## Enthaelt
@@ -17,7 +17,14 @@ auth-service, eigene Migrations-Historie (migrationsTableName
   race-condition-sicher per Row-Lock (gleiches Muster wie die Nummernkreis-Engine),
   Warenausgang/Umbuchung lehnen negativen Bestand mit klarer Fehlermeldung ab,
   Inventurkorrektur darf das bewusst umgehen (Zweck: Bestand auf Ist-Wert setzen)
-- RBAC scharf: modul_key "artikelstamm" / "kunden" / "lieferanten" / "lager"
+- Einkauf/Bestellwesen: Bestellungen an Lieferanten (Kopf+Positionen,
+  Nummernkreis 'bestellungen'), Status-Workflow offen -> bestellt ->
+  teilweise_geliefert/abgeschlossen, Wareneingang auf eine Bestellposition bucht
+  atomar sowohl gelieferte_menge als auch den echten Lagerbestand (ueber
+  lagerbewegung.service.ts in derselben Transaktion, referenz_typ/referenz_id auf
+  lagerbewegung verlinkt zur Bestellposition)
+- RBAC scharf: modul_key "artikelstamm" / "kunden" / "lieferanten" / "lager" /
+  "einkauf"
 
 ## Bekannte Einschraenkungen (bewusst, nicht vergessen)
 - Keine i18n-Mehrsprachigkeit bei Artikel-`bezeichnung`
@@ -28,4 +35,6 @@ auth-service, eigene Migrations-Historie (migrationsTableName
 - Lagerverwaltung: keine Lagerplatz-Feingranularitaet (nur Lager-Ebene), keine
   Bewertung (FIFO/LIFO/Ø - kommt mit "Preisfindung"/Bilanzierung spaeter), keine
   Mindestbestand-/Meldebestand-Logik
+- Einkauf: keine Teil-Stornierung einzelner Positionen, kein Genehmigungsprozess,
+  kein Preisvergleich/Anfragen-Workflow (MVP)
 - `libs/common`-Code hier unter `src/common/` dupliziert (Docker-Build-Context-Grund)

@@ -17,7 +17,11 @@ import { InventurDto } from './dto/inventur.dto';
 export class LagerbewegungService {
   constructor(private readonly dataSource: DataSource) {}
 
-  wareneingang(dto: WareneingangDto, gebuchtVon: string): Promise<Lagerbewegung> {
+  wareneingang(
+    dto: WareneingangDto,
+    gebuchtVon: string,
+    referenz?: { typ: string; id: string },
+  ): Promise<Lagerbewegung> {
     return this.dataSource.transaction((manager) =>
       this.bucheDelta(manager, {
         artikelId: dto.artikelId,
@@ -26,8 +30,31 @@ export class LagerbewegungService {
         delta: dto.menge,
         kommentar: dto.kommentar ?? null,
         gebuchtVon,
+        referenzTyp: referenz?.typ ?? null,
+        referenzId: referenz?.id ?? null,
       }),
     );
+  }
+
+  // Fuer Aufrufer, die bereits Teil einer laufenden Transaktion sind (z. B.
+  // einkauf.service.ts beim Wareneingang auf eine Bestellposition) - vermeidet eine
+  // verschachtelte, eigene Transaktion.
+  wareneingangInTransaktion(
+    manager: EntityManager,
+    dto: WareneingangDto,
+    gebuchtVon: string,
+    referenz?: { typ: string; id: string },
+  ): Promise<Lagerbewegung> {
+    return this.bucheDelta(manager, {
+      artikelId: dto.artikelId,
+      lagerId: dto.lagerId,
+      typ: 'wareneingang',
+      delta: dto.menge,
+      kommentar: dto.kommentar ?? null,
+      gebuchtVon,
+      referenzTyp: referenz?.typ ?? null,
+      referenzId: referenz?.id ?? null,
+    });
   }
 
   warenausgang(dto: WarenausgangDto, gebuchtVon: string): Promise<Lagerbewegung> {
@@ -100,6 +127,8 @@ export class LagerbewegungService {
       kommentar: string | null;
       gebuchtVon: string;
       umbuchungGruppeId?: string;
+      referenzTyp?: string | null;
+      referenzId?: string | null;
     },
   ): Promise<Lagerbewegung> {
     const bestand = await this.leseOderErzeugeBestandGesperrt(manager, params.artikelId, params.lagerId);
@@ -117,6 +146,8 @@ export class LagerbewegungService {
       kommentar: params.kommentar,
       gebuchtVon: params.gebuchtVon,
       umbuchungGruppeId: params.umbuchungGruppeId ?? null,
+      referenzTyp: params.referenzTyp ?? null,
+      referenzId: params.referenzId ?? null,
     });
   }
 
@@ -131,6 +162,8 @@ export class LagerbewegungService {
       kommentar: string | null;
       gebuchtVon: string;
       umbuchungGruppeId: string | null;
+      referenzTyp?: string | null;
+      referenzId?: string | null;
     },
   ): Promise<Lagerbewegung> {
     const neueMenge = (Number(bestand.menge) + Number(params.delta)).toFixed(3);
@@ -145,6 +178,8 @@ export class LagerbewegungService {
       umbuchungGruppeId: params.umbuchungGruppeId,
       kommentar: params.kommentar,
       gebuchtVon: params.gebuchtVon,
+      referenzTyp: params.referenzTyp ?? null,
+      referenzId: params.referenzId ?? null,
     });
     return manager.save(bewegung);
   }

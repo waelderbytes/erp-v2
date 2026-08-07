@@ -4,4 +4,5 @@ export const NUMMERNKREIS_DEFAULT_LABELS: Record<string, string> = {
   artikel: 'Artikel',
   kunden: 'Kunden',
   lieferanten: 'Lieferanten',
+  bestellungen: 'Bestellungen',
 };

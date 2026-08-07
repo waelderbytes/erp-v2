@@ -43,6 +43,16 @@ export class Lagerbewegung {
   @Column({ type: 'text', nullable: true })
   kommentar: string | null;
 
+  // Generische Rueckverfolgbarkeit zu einem ausloesenden Beleg (z. B. Bestellposition
+  // beim Wareneingang aus dem Einkauf) - siehe Migration
+  // 0005_einkauf_bestellwesen.ts fuer die Begruendung des generischen statt
+  // festen FK-Ansatzes.
+  @Column({ name: 'referenz_typ', type: 'varchar', length: 30, nullable: true })
+  referenzTyp: string | null;
+
+  @Column({ name: 'referenz_id', type: 'uuid', nullable: true })
+  referenzId: string | null;
+
   @Column({ name: 'gebucht_von' })
   gebuchtVon: string;
 

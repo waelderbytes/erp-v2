@@ -12,5 +12,6 @@ import { LagerbewegungController } from './lagerbewegung.controller';
   imports: [TypeOrmModule.forFeature([Lager, Lagerbestand, Lagerbewegung])],
   controllers: [LagerController, LagerbewegungController],
   providers: [LagerService, LagerbewegungService],
+  exports: [LagerService, LagerbewegungService],
 })
 export class LagerModule {}
