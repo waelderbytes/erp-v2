@@ -50,6 +50,11 @@ export class ArtikelService {
       untergruppeId: dto.untergruppeId ?? null,
       bestandsgefuehrt: dto.artikelart !== 'dienstleistung' && (dto.bestandsgefuehrt ?? false),
       bomfaehig: dto.artikelart === 'fertigungsartikel' && (dto.bomfaehig ?? false),
+      gewichtKg: dto.gewichtKg ?? null,
+      laengeMm: dto.laengeMm ?? null,
+      breiteMm: dto.breiteMm ?? null,
+      hoeheMm: dto.hoeheMm ?? null,
+      mindestbestand: dto.mindestbestand ?? null,
       einheitId: dto.einheitId ?? null,
       eanGtin: dto.eanGtin ?? null,
       hersteller: dto.hersteller ?? null,
@@ -101,6 +106,11 @@ export class ArtikelService {
     if (dto.bomfaehig !== undefined) {
       artikel.bomfaehig = artikel.artikelart === 'fertigungsartikel' && dto.bomfaehig;
     }
+    if (dto.gewichtKg !== undefined) artikel.gewichtKg = dto.gewichtKg;
+    if (dto.laengeMm !== undefined) artikel.laengeMm = dto.laengeMm;
+    if (dto.breiteMm !== undefined) artikel.breiteMm = dto.breiteMm;
+    if (dto.hoeheMm !== undefined) artikel.hoeheMm = dto.hoeheMm;
+    if (dto.mindestbestand !== undefined) artikel.mindestbestand = dto.mindestbestand;
     if (dto.aktiv !== undefined) artikel.aktiv = dto.aktiv;
 
     try {

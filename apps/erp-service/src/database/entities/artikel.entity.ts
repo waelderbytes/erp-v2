@@ -75,6 +75,27 @@ export class Artikel {
   @Column({ default: false })
   bomfaehig: boolean;
 
+  // Migration 0013, Standard-Erweiterungsfelder aus feldkatalog.md Abschnitt
+  // 1.2 - alle optional. numeric-Spalten kommen als String aus TypeORM
+  // (Praezision), gleiches Muster wie z.B. Lagerbewegung.menge.
+  @Column({ name: 'gewicht_kg', type: 'numeric', precision: 10, scale: 3, nullable: true })
+  gewichtKg: string | null;
+
+  @Column({ name: 'laenge_mm', type: 'numeric', precision: 10, scale: 2, nullable: true })
+  laengeMm: string | null;
+
+  @Column({ name: 'breite_mm', type: 'numeric', precision: 10, scale: 2, nullable: true })
+  breiteMm: string | null;
+
+  @Column({ name: 'hoehe_mm', type: 'numeric', precision: 10, scale: 2, nullable: true })
+  hoeheMm: string | null;
+
+  // Nur relevant wenn bestandsgefuehrt=true (feldkatalog.md) - anders als
+  // bestandsgefuehrt/bomfaehig selbst KEIN Service-seitig erzwungenes Feld,
+  // sondern eine reine Zusatzinfo (Frontend blendet es nur passend ein/aus).
+  @Column({ name: 'mindestbestand', type: 'numeric', precision: 14, scale: 3, nullable: true })
+  mindestbestand: string | null;
+
   // Rein internes Notizfeld (z.B. Einkaufskonditionen-Hinweise, Lagerplatz-
   // Besonderheiten) - erscheint NIE auf Belegen, im Unterschied zu
   // 'beschreibung' (Langtext, kann auf Angeboten/Rechnungen landen). Bewusst

@@ -1,4 +1,4 @@
-import { IsBoolean, IsIn, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsBoolean, IsIn, IsNumberString, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class ArtikelAnlegenDto {
   @IsIn(['handelsware', 'dienstleistung', 'fertigungsartikel'])
@@ -29,6 +29,28 @@ export class ArtikelAnlegenDto {
   @IsOptional()
   @IsBoolean()
   bomfaehig?: boolean;
+
+  @IsOptional()
+  @IsNumberString()
+  gewichtKg?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  laengeMm?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  breiteMm?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  hoeheMm?: string;
+
+  // Nur relevant wenn bestandsgefuehrt=true (siehe feldkatalog.md) - keine
+  // Service-seitige Erzwingung, reine Zusatzinfo.
+  @IsOptional()
+  @IsNumberString()
+  mindestbestand?: string;
 
   @IsOptional()
   @IsUUID()

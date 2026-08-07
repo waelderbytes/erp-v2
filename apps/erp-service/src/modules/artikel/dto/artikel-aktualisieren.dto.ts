@@ -1,4 +1,4 @@
-import { IsBoolean, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsBoolean, IsNumberString, IsOptional, IsString, IsUUID } from 'class-validator';
 
 // Alle Felder optional - PATCH-Semantik, nur mitgeschickte Felder werden
 // geaendert (siehe artikel.service.ts aktualisieren()). Bewusst OHNE
@@ -44,6 +44,28 @@ export class ArtikelAktualisierenDto {
   @IsOptional()
   @IsBoolean()
   bomfaehig?: boolean;
+
+  @IsOptional()
+  @IsNumberString()
+  gewichtKg?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  laengeMm?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  breiteMm?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  hoeheMm?: string;
+
+  // Nur relevant wenn bestandsgefuehrt=true (siehe feldkatalog.md) - keine
+  // Service-seitige Erzwingung, reine Zusatzinfo.
+  @IsOptional()
+  @IsNumberString()
+  mindestbestand?: string;
 
   @IsOptional()
   @IsBoolean()
