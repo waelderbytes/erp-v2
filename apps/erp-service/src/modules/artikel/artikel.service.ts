@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Artikel } from '../../database/entities/artikel.entity';
@@ -59,7 +59,7 @@ export class ArtikelService {
 
   // Legt die n:m-Zuordnung Artikel<->Lieferant an. Vorher gibt es keine Zeile,
   // die per favoritSetzen() favorisiert werden koennte - siehe Kommentar im DTO.
-  lieferantZuordnen(artikelId: string, dto: ArtikelLieferantZuordnenDto): Promise<ArtikelLieferant> {
+  async lieferantZuordnen(artikelId: string, dto: ArtikelLieferantZuordnenDto): Promise<ArtikelLieferant> {
     const zuordnung = this.artikelLieferantRepo.create({
       artikelId,
       lieferantId: dto.lieferantId,
@@ -67,7 +67,17 @@ export class ArtikelService {
       einkaufspreis: dto.einkaufspreis ?? null,
       lieferzeitTage: dto.lieferzeitTage ?? null,
     });
-    return this.artikelLieferantRepo.save(zuordnung);
+    try {
+      return await this.artikelLieferantRepo.save(zuordnung);
+    } catch (e) {
+      // Postgres-Fehlercode 23505 = unique_violation (siehe Migration
+      // 0003_artikel_lieferant_unique.ts). Klare fachliche Fehlermeldung statt
+      // eines rohen 500ers mit DB-Interna.
+      if ((e as { code?: string }).code === '23505') {
+        throw new ConflictException('Dieser Lieferant ist diesem Artikel bereits zugeordnet.');
+      }
+      throw e;
+    }
   }
 
   lieferantenListe(artikelId: string): Promise<ArtikelLieferant[]> {
