@@ -85,6 +85,37 @@ export interface Lagerbestand {
   lager?: Lager;
 }
 
+export type LagerbewegungTyp = 'wareneingang' | 'warenausgang' | 'umbuchung' | 'inventur_korrektur';
+
+export interface Lagerbewegung {
+  id: string;
+  artikelId: string;
+  lagerId: string;
+  lager?: Lager;
+  typ: LagerbewegungTyp;
+  menge: string;
+  umbuchungGruppeId: string | null;
+  kommentar: string | null;
+  referenzTyp: string | null;
+  referenzId: string | null;
+  gebuchtVon: string;
+  gebuchtAm: string;
+}
+
+export interface AuditLogEintrag {
+  id: string;
+  operation: 'INSERT' | 'UPDATE' | 'DELETE';
+  oldData: Record<string, unknown> | null;
+  newData: Record<string, unknown> | null;
+  changedBy: string | null;
+  changedAt: string;
+}
+
+export interface ArtikelLog {
+  auditLog: AuditLogEintrag[];
+  lagerbewegungen: Lagerbewegung[];
+}
+
 export type BestellungStatus = 'offen' | 'bestellt' | 'teilweise_geliefert' | 'abgeschlossen' | 'storniert';
 
 export interface Bestellposition {

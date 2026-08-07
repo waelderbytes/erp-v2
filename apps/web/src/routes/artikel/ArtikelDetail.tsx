@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import {
   Artikel,
   ArtikelLieferant,
+  ArtikelLog,
   ArtikelUebersetzung,
   Artikelart,
   Artikelpreis,
@@ -40,7 +41,8 @@ import {
 interface ArtikelTabDef {
   value: string;
   label: string;
-  erfordertArtikel: boolean;
+  deaktiviert: boolean;
+  tooltip?: string;
 }
 
 export function ArtikelDetail() {
@@ -72,22 +74,42 @@ export function ArtikelDetail() {
     return <p className="text-sm text-muted-foreground">Lädt…</p>;
   }
 
-  // "Bestand" bleibt vorerst nur sichtbar, wenn bereits bekannt ist, dass der
-  // Artikel bestandsgefuehrt ist (separater, noch offener Roadmap-Punkt: "Bestand-Tab
-  // immer sichtbar, nur ausgegraut wenn nicht bestandsgefuehrt"). Alle anderen Tabs
-  // sind immer in der Liste, aber ggf. disabled.
+  const stammdatenNichtGespeichert = 'Bitte zuerst Stammdaten speichern';
+
+  // "Bestand" ist jetzt IMMER in der Liste (Roadmap-Punkt "Bestand-Tab immer
+  // sichtbar"), nur ausgegraut wenn nicht bestandsgefuehrt - vorher wurde der
+  // Tab bei nicht bestandsgefuehrten Artikeln (z.B. Dienstleistung) komplett
+  // ausgeblendet.
   const tabs: ArtikelTabDef[] = [
-    { value: 'stammdaten', label: 'Stammdaten', erfordertArtikel: false },
-    ...(artikel?.bestandsgefuehrt ? [{ value: 'bestand', label: 'Bestand', erfordertArtikel: true }] : []),
-    { value: 'preise', label: 'Preise', erfordertArtikel: true },
-    { value: 'lieferanten', label: 'Lieferanten', erfordertArtikel: true },
-    { value: 'sprachen', label: 'Sprachen', erfordertArtikel: true },
+    { value: 'stammdaten', label: 'Stammdaten', deaktiviert: false },
+    {
+      value: 'bestand',
+      label: 'Bestand',
+      deaktiviert: !artikel || !artikel.bestandsgefuehrt,
+      tooltip: !artikel ? stammdatenNichtGespeichert : !artikel.bestandsgefuehrt ? 'Artikel ist nicht bestandsgeführt' : undefined,
+    },
+    { value: 'preise', label: 'Preise', deaktiviert: !artikel, tooltip: !artikel ? stammdatenNichtGespeichert : undefined },
+    {
+      value: 'lieferanten',
+      label: 'Lieferanten',
+      deaktiviert: !artikel,
+      tooltip: !artikel ? stammdatenNichtGespeichert : undefined,
+    },
+    { value: 'sprachen', label: 'Sprachen', deaktiviert: !artikel, tooltip: !artikel ? stammdatenNichtGespeichert : undefined },
+    { value: 'log', label: 'Log', deaktiviert: !artikel, tooltip: !artikel ? stammdatenNichtGespeichert : undefined },
   ];
 
   const aktuellerIndex = tabs.findIndex((t) => t.value === activeTab);
-  const vorherigerTab = tabs[aktuellerIndex - 1];
-  const naechsterTab = tabs[aktuellerIndex + 1];
-  const weiterGesperrt = !naechsterTab || (naechsterTab.erfordertArtikel && !artikel);
+  // Ueberspringt deaktivierte Tabs (z.B. "Bestand" bei einer Dienstleistung),
+  // statt den Nutzer mit Weiter/Zurueck auf einem gesperrten Tab landen zu lassen.
+  function naechsterAktiverTab(vonIndex: number, richtung: 1 | -1): ArtikelTabDef | undefined {
+    for (let i = vonIndex + richtung; i >= 0 && i < tabs.length; i += richtung) {
+      if (!tabs[i].deaktiviert) return tabs[i];
+    }
+    return undefined;
+  }
+  const vorherigerTab = naechsterAktiverTab(aktuellerIndex, -1);
+  const naechsterTab = naechsterAktiverTab(aktuellerIndex, 1);
 
   return (
     <div className="space-y-4">
@@ -104,12 +126,7 @@ export function ArtikelDetail() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           {tabs.map((t) => (
-            <TabsTrigger
-              key={t.value}
-              value={t.value}
-              disabled={t.erfordertArtikel && !artikel}
-              title={t.erfordertArtikel && !artikel ? 'Bitte zuerst Stammdaten speichern' : undefined}
-            >
+            <TabsTrigger key={t.value} value={t.value} disabled={t.deaktiviert} title={t.tooltip}>
               {t.label}
             </TabsTrigger>
           ))}
@@ -152,6 +169,11 @@ export function ArtikelDetail() {
             <SprachenTab artikelId={artikel.id} />
           </TabsContent>
         )}
+        {artikel && (
+          <TabsContent value="log">
+            <LogTab artikelId={artikel.id} />
+          </TabsContent>
+        )}
       </Tabs>
 
       <div className="flex gap-2 pt-2">
@@ -166,7 +188,7 @@ export function ArtikelDetail() {
         <Button
           type="button"
           variant="outline"
-          disabled={weiterGesperrt}
+          disabled={!naechsterTab}
           onClick={() => naechsterTab && setActiveTab(naechsterTab.value)}
         >
           Weiter
@@ -993,5 +1015,137 @@ function SprachenTab({ artikelId }: { artikelId: string }) {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+// Roadmap-Punkt "Log-Tab": kombinierte, chronologische Ansicht aus Audit-Trail
+// (jede Aenderung an artikel, DB-Trigger-basiert, siehe architecture.md
+// Abschnitt 5) und Lagerbuchungen. Filter "Nur Buchungen" blendet die
+// generischen Audit-Eintraege aus, zeigt nur die tatsaechlichen
+// Lagerbewegungen - beides kommt vom selben Backend-Endpoint, das Filtern
+// passiert rein im Frontend (kein zweiter Request noetig).
+const LAGERBEWEGUNG_TYP_LABEL: Record<string, string> = {
+  wareneingang: 'Wareneingang',
+  warenausgang: 'Warenausgang',
+  umbuchung: 'Umbuchung',
+  inventur_korrektur: 'Inventurkorrektur',
+};
+
+const ARTIKEL_FELD_LABEL: Record<string, string> = {
+  bezeichnung: 'Kurztext',
+  beschreibung: 'Langtext',
+  einheit_id: 'Einheit',
+  ean_gtin: 'EAN/GTIN',
+  hersteller: 'Hersteller',
+  hersteller_artikelnummer: 'Hersteller-Art.-Nr.',
+  interne_notiz: 'Interne Notiz',
+  bestandsgefuehrt: 'Bestandsgeführt',
+  aktiv: 'Aktiv',
+};
+
+interface LogZeile {
+  id: string;
+  zeitpunkt: string;
+  istBuchung: boolean;
+  text: string;
+  benutzer: string | null;
+}
+
+function LogTab({ artikelId }: { artikelId: string }) {
+  const [log, setLog] = useState<ArtikelLog | null>(null);
+  const [fehler, setFehler] = useState<string | null>(null);
+  const [nurBuchungen, setNurBuchungen] = useState(false);
+
+  useEffect(() => {
+    api
+      .get<ArtikelLog>(`/artikel/${artikelId}/log`)
+      .then(setLog)
+      .catch((err) => setFehler(err instanceof ApiError ? err.message : 'Log konnte nicht geladen werden.'));
+  }, [artikelId]);
+
+  if (fehler) return <p className="text-sm text-destructive">{fehler}</p>;
+  if (!log) return <p className="text-sm text-muted-foreground">Lädt…</p>;
+
+  const buchungsZeilen: LogZeile[] = log.lagerbewegungen.map((b) => {
+    const vorzeichen = Number(b.menge) >= 0 ? '+' : '';
+    const teile = [
+      `${LAGERBEWEGUNG_TYP_LABEL[b.typ] ?? b.typ}: ${vorzeichen}${b.menge} (${b.lager?.bezeichnung ?? b.lagerId})`,
+    ];
+    if (b.kommentar) teile.push(b.kommentar);
+    return {
+      id: `bewegung-${b.id}`,
+      zeitpunkt: b.gebuchtAm,
+      istBuchung: true,
+      text: teile.join(' – '),
+      benutzer: b.gebuchtVon,
+    };
+  });
+
+  const auditZeilen: LogZeile[] = log.auditLog.map((e) => {
+    let text: string;
+    if (e.operation === 'INSERT') {
+      text = 'Artikel angelegt';
+    } else if (e.operation === 'DELETE') {
+      text = 'Artikel gelöscht';
+    } else {
+      const geaendert = Object.keys(e.newData ?? {}).filter((feld) => {
+        const alt = e.oldData?.[feld];
+        const neu = e.newData?.[feld];
+        return JSON.stringify(alt) !== JSON.stringify(neu);
+      });
+      text =
+        geaendert.length > 0
+          ? `Geändert: ${geaendert.map((f) => ARTIKEL_FELD_LABEL[f] ?? f).join(', ')}`
+          : 'Geändert';
+    }
+    return {
+      id: `audit-${e.id}`,
+      zeitpunkt: e.changedAt,
+      istBuchung: false,
+      text,
+      benutzer: e.changedBy,
+    };
+  });
+
+  const zeilen = [...buchungsZeilen, ...auditZeilen]
+    .filter((z) => !nurBuchungen || z.istBuchung)
+    .sort((a, b) => new Date(b.zeitpunkt).getTime() - new Date(a.zeitpunkt).getTime());
+
+  return (
+    <div className="space-y-3">
+      <label className="flex items-center gap-2 text-sm">
+        <input type="checkbox" checked={nurBuchungen} onChange={(e) => setNurBuchungen(e.target.checked)} />
+        Nur Buchungen anzeigen
+      </label>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-40">Zeitpunkt</TableHead>
+            <TableHead className="w-24">Art</TableHead>
+            <TableHead>Ereignis</TableHead>
+            <TableHead className="w-48">Benutzer</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {zeilen.length === 0 && (
+            <TableRow>
+              <TableCell colSpan={4} className="text-center text-muted-foreground">
+                Keine Einträge vorhanden.
+              </TableCell>
+            </TableRow>
+          )}
+          {zeilen.map((z) => (
+            <TableRow key={z.id}>
+              <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                {new Date(z.zeitpunkt).toLocaleString('de-DE')}
+              </TableCell>
+              <TableCell className="text-xs">{z.istBuchung ? 'Buchung' : 'Änderung'}</TableCell>
+              <TableCell className="text-sm">{z.text}</TableCell>
+              <TableCell className="font-mono text-xs text-muted-foreground">{z.benutzer ?? '–'}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 }
