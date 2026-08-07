@@ -39,7 +39,16 @@ docker compose build erp-service
 docker compose up -d erp-service
 ```
 
-**Zweiter, noch ungelöster Bug**: "Artikel neu → zeigt nur 'Lädt…'". Code-Review von `ArtikelDetail.tsx`, `App.tsx`, `RequireAuth.tsx`, `Layout.tsx` zeigt keine offensichtliche Fehlerquelle — Route-Logik für `id === 'neu'` sieht korrekt aus. **Noch offen, wartet auf Browser-Konsole/Network-Tab-Infos vom User**, um die tatsächliche Fehlerursache zu finden (nicht raten, sondern nachfragen — siehe Nutzerpräferenzen unten).
+**Zweiter Bug GELOEST (Commit `07ec16a`, gepusht, noch nicht deployt)**: "Artikel neu → zeigt nur 'Lädt…'". Root Cause: Route `artikel/neu` in `App.tsx` hatte keinen `:id`-Parameter, `useParams().id` lieferte bei `/artikel/neu` daher `undefined` statt `"neu"` -> `istNeu` faelschlich `false` -> Render-Guard haengt dauerhaft im Ladezustand (kein Request/Fehler, deckt sich mit User-Beobachtung). Fix: redundante Route entfernt, `artikel/:id` matcht `/artikel/neu` ebenfalls. Lokal verifiziert (`tsc --noEmit`, `vite build`). Deploy-Befehl (kein Migrations-Schritt, reiner Frontend-Code-Fix):
+
+```bash
+cd /opt/erp-v2
+git pull
+docker compose build web
+docker compose up -d web
+```
+
+(Deploy-Service-Name ggf. anpassen, falls das Frontend in docker-compose.yml anders heisst.)
 
 ## Zwei kürzlich behobene Produktionsvorfälle (zur Erinnerung an häufige Fehlerklasse)
 
@@ -74,7 +83,7 @@ docker compose up -d erp-service
 ## Nächste offene Aufgaben (Roadmap, nach aktueller Priorität)
 
 1. Deploy des `55480c5`-Fixes bestätigen lassen (Sprache löschen)
-2. "Artikel neu → Lädt…"-Bug aufklären (wartet auf User-Infos: Konsole/Network-Tab)
+2. ~~"Artikel neu → Lädt…"-Bug aufklären~~ – erledigt (Commit `07ec16a`), Deploy auf dem Server steht noch aus
 3. Artikel: Log-Tab (Audit-Trail + Lagerbuchungen mit Buchungsgrund, Filter "nur Buchungen") — Audit-Log-Tabelle existiert bereits generisch per DB-Trigger, aber noch kein Query-Endpoint dafür
 4. Artikel: Bestand-Tab soll IMMER sichtbar sein, nur ausgegraut/deaktiviert wenn nicht bestandsgeführt (aktuell wird der Tab komplett ausgeblendet — das soll geändert werden)
 5. PWA-Installierbarkeit mit generiertem Platzhalter-Icon (User hat sich explizit für Platzhalter statt eigenem Logo entschieden)

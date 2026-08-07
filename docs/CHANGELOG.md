@@ -10,6 +10,18 @@ im vollen Sinn.
 
 ## [Unreleased]
 
+### Fix: "Artikel neu" haengt bei "Laedt..." fest (07.08.2026)
+- Root Cause gefunden (Bug aus session-handoff.md): Route `artikel/neu` in
+  `App.tsx` hatte keinen `:id`-Parameter, `useParams().id` lieferte bei
+  `/artikel/neu` daher `undefined` statt `"neu"` - `istNeu` wurde faelschlich
+  `false`, der Render-Guard blieb dauerhaft im Ladezustand haengen (kein
+  Request, kein Fehler - deckt sich mit den Beobachtungen ohne Konsolen-/
+  Network-Auffaelligkeiten)
+- Fix: redundante Route entfernt, `artikel/:id` matcht `/artikel/neu`
+  ebenfalls und liefert korrekt `id="neu"`
+- Verifiziert lokal: `npm install --ignore-scripts`, `tsc --noEmit`,
+  `vite build` (alle fehlerfrei), Commit `07ec16a`, gepusht
+
 ### Mehrsprachigkeit Kurztext/Langtext + interne Notiz + Artikel-Assistent (07.08.2026)
 - Nutzerwunsch, Referenz ERP v1 (`waelderbytes-suite`, GitHub) auf Bitte
   geklont und ausgewertet (Migration `0018_mehrsprachigkeit_interne_notiz.py`,
