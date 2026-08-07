@@ -8,6 +8,8 @@ import { LieferantenListe } from '@/routes/lieferanten/LieferantenListe';
 import { LagerUebersicht } from '@/routes/lager/LagerUebersicht';
 import { BestellungenListe } from '@/routes/einkauf/BestellungenListe';
 import { PreiseUebersicht } from '@/routes/preise/PreiseUebersicht';
+import { BenutzerListe } from '@/routes/benutzer/BenutzerListe';
+import { ZeiterfassungUebersicht } from '@/routes/zeiterfassung/ZeiterfassungUebersicht';
 
 export default function App() {
   return (
@@ -23,6 +25,8 @@ export default function App() {
             <Route path="lager" element={<LagerUebersicht />} />
             <Route path="bestellungen" element={<BestellungenListe />} />
             <Route path="preise" element={<PreiseUebersicht />} />
+            <Route path="zeiterfassung" element={<ZeiterfassungUebersicht />} />
+            <Route path="benutzer" element={<BenutzerListe />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

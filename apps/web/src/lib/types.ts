@@ -93,3 +93,50 @@ export interface Artikelpreis {
   prioritaet: number;
   aktiv: boolean;
 }
+
+export type BerechtigungsAktion = 'lesen' | 'schreiben' | 'loeschen' | 'administrieren';
+
+export interface Berechtigung {
+  id: string;
+  modulKey: string;
+  aktion: BerechtigungsAktion;
+}
+
+export interface Rolle {
+  id: string;
+  name: string;
+  istSystemRolle: boolean;
+  beschreibung: string | null;
+  berechtigungen?: Berechtigung[];
+}
+
+export interface Benutzer {
+  id: string;
+  email: string;
+  vorname: string | null;
+  nachname: string | null;
+  aktiv: boolean;
+  personalnummer: string | null;
+  rfidUid: string | null;
+  rollen: Rolle[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type ZeitbuchungTyp = 'kommt' | 'geht' | 'pause_beginn' | 'pause_ende';
+export type ZeitbuchungStatus = 'ausgestempelt' | 'eingestempelt' | 'pause';
+
+export interface Zeitbuchung {
+  id: string;
+  benutzerId: string;
+  typ: ZeitbuchungTyp;
+  zeitpunkt: string;
+  quelle: 'web' | 'kiosk';
+  kommentar: string | null;
+}
+
+export interface ArbeitszeitHeute {
+  arbeitszeitMinuten: number;
+  pausenzeitMinuten: number;
+  status: ZeitbuchungStatus;
+}

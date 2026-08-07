@@ -10,6 +10,38 @@ im vollen Sinn.
 
 ## [Unreleased]
 
+### Frontend: UI fuer Benutzerverwaltung + Zeiterfassung (07.08.2026)
+- Neue Nav-Gruppen "Zeiterfassung" und "Verwaltung" in apps/web (siehe
+  Layout.tsx) - "Verwaltung" (Benutzer) ist bewusst nur fuer Owner/
+  Administrator sichtbar (`nurAdmin`-Flag), rein clientseitige UX-Verbesserung,
+  keine Sicherheitsgrenze (die eigentliche Durchsetzung bleibt serverseitig
+  per RbacGuard)
+- Neuer Screen `routes/benutzer/BenutzerListe.tsx`: Tabelle aller Benutzer,
+  Anlegen-Dialog (E-Mail/Passwort/Name + optionale Rollenauswahl per
+  Checkboxen), Bearbeiten-Dialog mit drei Bereichen - Stammdaten
+  (Vorname/Nachname/aktiv/Personalnummer), Rollen (Checkboxen, jede Aenderung
+  sofort per POST/DELETE /benutzer/:id/rollen), Passwort/PIN setzen
+- Neuer Screen `routes/zeiterfassung/ZeiterfassungUebersicht.tsx`:
+  Statuskarte mit Arbeitszeit/Pausenzeit heute (GET /zeitbuchung/heute),
+  Stempel-Buttons kontextabhaengig nach aktuellem Status (nur die laut
+  Zustandsautomat erlaubten Aktionen werden angezeigt - z.B. nur "Kommen" im
+  Status "ausgestempelt")
+- `lib/api.ts`: `patch`/`delete`-Methoden ergaenzt (bisher nur `get`/`post`)
+- `lib/types.ts`: Typen Benutzer/Rolle/Berechtigung/Zeitbuchung/ArbeitszeitHeute
+  ergaenzt
+- `nginx.conf` + `vite.config.ts` (Dev-Proxy): Routing fuer `/api/benutzer*`
+  und `/api/rollen*` zum auth-service ergaenzt. Dabei eine Falle vermieden:
+  die Locations sind bewusst OHNE abschliessenden Slash definiert (anders als
+  `/api/auth/`), weil `GET/POST /benutzer` und `GET /rollen` ohne weiteren
+  Pfad-Teil aufgerufen werden - eine Location "/api/benutzer/" mit Slash haette
+  die exakte Anfrage "/api/benutzer" nicht erfasst und sie faelschlich an
+  erp-service durchgereicht
+- Verifiziert lokal: `npx tsc --noEmit` + `npm run build` erfolgreich, Bundle
+  336 KB / 105 KB gzip
+- Kiosk-Frontend (Wandtablet-UI) bewusst NICHT Teil dieser Aenderung - eigene,
+  unabhaengige Oberflaeche fuer ein anderes Geraet/andere Zielgruppe, noch
+  offen (siehe module-uebersicht.md)
+
 ### Auth: Benutzerverwaltung live verifiziert (07.08.2026)
 - Auf dem Server end-to-end getestet: Benutzer angelegt (POST /benutzer -
   Response bestaetigt, dass kein passwortHash/pinHash mehr mitgeschickt wird),

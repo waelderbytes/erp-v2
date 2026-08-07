@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Package, Users, Truck, Warehouse, ShoppingCart, Tags, LogOut } from 'lucide-react';
+import { Package, Users, Truck, Warehouse, ShoppingCart, Tags, LogOut, Clock, UserCog } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getCurrentUser, logout } from '@/lib/auth';
 
@@ -12,6 +12,12 @@ interface NavItem {
   to: string;
   label: string;
   icon: typeof Package;
+  // Clientseitige UX-Verbesserung, KEINE Sicherheitsgrenze - die eigentliche
+  // Durchsetzung passiert serverseitig per RbacGuard (Benutzerverwaltung ist
+  // exklusiv Owner/Administrator vorbehalten, siehe auth-service Migration
+  // 0003). Ohne dieses Flag wuerde z.B. ein Sachbearbeiter den Menuepunkt
+  // sehen und beim Klick nur ein verwirrendes 403 bekommen.
+  nurAdmin?: boolean;
 }
 
 interface NavGroup {
@@ -31,12 +37,20 @@ const navigationGruppen: NavGroup[] = [
       { to: '/preise', label: 'Preise', icon: Tags },
     ],
   },
-  // Naechste Gruppe folgt hier, z.B.:
-  // { titel: 'Zeiterfassung & Projekte', items: [...] },
+  {
+    titel: 'Zeiterfassung',
+    items: [{ to: '/zeiterfassung', label: 'Meine Zeiterfassung', icon: Clock }],
+  },
+  {
+    titel: 'Verwaltung',
+    items: [{ to: '/benutzer', label: 'Benutzer', icon: UserCog, nurAdmin: true }],
+  },
+  // Naechste Gruppe folgt hier, z.B. "Projekte" (Phase 2).
 ];
 
 export function Layout() {
   const user = getCurrentUser();
+  const istAdmin = user?.rollen.includes('owner') || user?.rollen.includes('administrator');
 
   return (
     <div className="flex min-h-screen">
@@ -45,13 +59,16 @@ export function Layout() {
           <span className="text-sm font-semibold">WälderBytes ERP</span>
         </div>
         <nav className="flex-1 space-y-4 overflow-y-auto p-3">
-          {navigationGruppen.map((gruppe) => (
+          {navigationGruppen.map((gruppe) => {
+            const sichtbareItems = gruppe.items.filter((item) => !item.nurAdmin || istAdmin);
+            if (sichtbareItems.length === 0) return null;
+            return (
             <div key={gruppe.titel}>
               <div className="mb-1 px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {gruppe.titel}
               </div>
               <div className="space-y-1">
-                {gruppe.items.map(({ to, label, icon: Icon }) => (
+                {sichtbareItems.map(({ to, label, icon: Icon }) => (
                   <NavLink
                     key={to}
                     to={to}
@@ -68,7 +85,8 @@ export function Layout() {
                 ))}
               </div>
             </div>
-          ))}
+            );
+          })}
         </nav>
         <div className="border-t border-border p-3">
           <div className="mb-2 truncate text-xs text-muted-foreground">{user?.email}</div>
