@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PassportModule } from '@nestjs/passport';
 import { Artikel } from '../../database/entities/artikel.entity';
+import { ArtikelUebersetzung } from '../../database/entities/artikel-uebersetzung.entity';
 import { ArtikelLieferant } from '../../database/entities/artikel-lieferant.entity';
 import { Artikelkategorie } from '../../database/entities/artikelkategorie.entity';
 import { ArtikelkategorieZuordnung } from '../../database/entities/artikelkategorie-zuordnung.entity';
@@ -14,7 +15,7 @@ import { JwtStrategy } from '../../common/auth';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Artikel, ArtikelLieferant, Artikelkategorie, ArtikelkategorieZuordnung]),
+    TypeOrmModule.forFeature([Artikel, ArtikelUebersetzung, ArtikelLieferant, Artikelkategorie, ArtikelkategorieZuordnung]),
     PassportModule,
     FirmaModule,
     NummernkreisModule,
