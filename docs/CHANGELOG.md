@@ -10,6 +10,20 @@ im vollen Sinn.
 
 ## [Unreleased]
 
+### Fix: Migrationslauf schlug fehl - Einheit-Entity fehlte in data-source.ts (08.08.2026)
+- Serverfehler beim Deploy des Einheiten-Moduls: "Entity metadata for
+  Artikel#einheit was not found" beim `migration:run:prod`
+- Root Cause: `src/database/data-source.ts` (eigene DataSource nur fuer den
+  Migrations-CLI-Lauf) hatte eine von `app.module.ts` komplett getrennte
+  `entities`-Liste, dort fehlte die neue `Einheit`-Entity
+- Dritte Stelle zur bekannten DI-Wiring-Fehlerklasse ergaenzt (siehe
+  session-handoff.md): Modul-`forFeature()`, globale `app.module.ts`-Liste,
+  UND `data-source.ts`-Liste muessen bei jeder neuen Entity mit Relation
+  geprueft werden
+- Verifiziert lokal: `tsc --noEmit`, `nest build` (beide fehlerfrei),
+  Commit `5c81fe7`, gepusht - Migrationslauf selbst konnte lokal nicht gegen
+  eine echte DB getestet werden (Sandbox ohne Postgres)
+
 ### Einheiten-Modul + Such-/Anlegen-Dropdown + Kurztext-Vorschlaege (08.08.2026)
 - Nutzerentscheidung: Einheit im Artikel-Wizard soll konsistent/erweiterbar
   sein statt Freitext -> echtes Einheiten-Modul (Vorbild ERP v1) statt

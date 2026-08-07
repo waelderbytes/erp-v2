@@ -50,10 +50,11 @@ docker compose up -d web
 
 (Deploy-Service-Name ggf. anpassen, falls das Frontend in docker-compose.yml anders heisst.)
 
-## Zwei kürzlich behobene Produktionsvorfälle (zur Erinnerung an häufige Fehlerklasse)
+## Drei kürzlich behobene Produktionsvorfälle (zur Erinnerung an häufige Fehlerklasse)
 
 1. **502 Bad Gateway**: `ArtikelUebersetzung`-Repository war im globalen TypeORM registriert und in `ArtikelService` injiziert, aber NICHT in `ArtikelModule`s eigenem `TypeOrmModule.forFeature([...])` — das ist ein DI-Wiring-Fehler, der bei `tsc --noEmit`/`nest build` NICHT auffällt, sondern erst beim echten App-Start. Das ist bereits mehrfach im Projekt passiert (auch bei `LagerModule` früher). **Merke: nach jeder neuen Entity/Repository immer prüfen, ob jedes Modul, das sie injiziert, sie auch in seinem eigenen `forFeature()` hat.**
 2. **Internal Server Error** ("column Artikel.interne_notiz does not exist"): Migration war im Image, aber nicht auf der Produktions-DB ausgeführt worden. Merke: nach jedem Feature-Deploy mit Schema-Änderung explizit `docker compose exec erp-service npm run migration:run:prod` in der Deploy-Anleitung hervorheben.
+3. **"Entity metadata for Artikel#einheit was not found"** beim Migrationslauf (08.08.2026, Einheiten-Modul): `src/database/data-source.ts` (eigene DataSource NUR für den Migrations-CLI-Lauf, komplett getrennt von `app.module.ts`s `TypeOrmModule.forRootAsync`-Entities-Liste) hatte die neue `Einheit`-Entity nicht in seiner `entities`-Liste, obwohl `Artikel` per `@ManyToOne` darauf verweist. **Dritte Stelle zur bisherigen DI-Wiring-Merkregel: bei jeder neuen Entity mit Relation IMMER drei Stellen prüfen — (a) jedes injizierende Modul's `forFeature()`, (b) `app.module.ts`s globale `entities`-Liste, (c) `database/data-source.ts`s `entities`-Liste (Migrations-DataSource).** `tsc --noEmit`/`nest build` schlagen bei sowas NICHT an, der Fehler zeigt sich erst beim echten Migrationslauf auf dem Server.
 
 ## Wichtige technische Patterns/Konventionen
 
