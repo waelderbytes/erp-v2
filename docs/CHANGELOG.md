@@ -10,6 +10,17 @@ im vollen Sinn.
 
 ## [Unreleased]
 
+### Zeiterfassung: zeiterfassung-service live verifiziert (07.08.2026)
+- Auf dem Server end-to-end getestet: Migration 0001 (CREATE TABLE zeitbuchung)
+  gelaufen, kommt gebucht, doppeltes kommt korrekt mit 409/Conflict abgelehnt
+  ("Buchung 'kommt' ist im aktuellen Status 'eingestempelt' nicht moeglich"),
+  pause_beginn -> Status korrekt 'pause', pause_ende, geht - kompletter Zyklus
+  ausgestempelt->eingestempelt->pause->eingestempelt->ausgestempelt bestaetigt
+- GET /zeitbuchung/heute liefert Arbeitszeit-/Pausenzeit-Berechnung korrekt,
+  auch waehrend eines noch laufenden (nicht abgeschlossenen) Intervalls
+- Damit ist das Zeiterfassung-Backend (Kiosk-Login + Kommt/Geht/Pause-Ledger)
+  vollstaendig implementiert und live verifiziert. Offen: Frontend-UI
+
 ### Zeiterfassung: neuer zeiterfassung-service - Kommt/Geht/Pause (08.08.2026)
 - Neuer eigenstaendiger NestJS-Service `apps/zeiterfassung-service`, strukturell
   identisch zu erp-service aufgebaut (eigene TypeORM-Migrationshistorie unter
