@@ -82,7 +82,7 @@ konfigurierbare Zusatzfelder, statt alles hart zu codieren.
 ### Kernmodule (Phase 2)
 | Modul | Status | Beschreibung |
 |---|---|---|
-| Zeiterfassung | ⬜ offen | Mobile Erfassung (PWA) mit Bezug zu Auftrag/Projekt und Standort (GPS-Erfassung beim Buchen, kein permanentes Tracking) – für Servicetechniker vor Ort ebenso wie für interne Zeiten |
+| Zeiterfassung | 🚧 Kiosk-Login live verifiziert (08.08.2026), Kommt/Geht/Pause folgt | Mobile Erfassung (PWA) mit Bezug zu Auftrag/Projekt und Standort (GPS-Erfassung beim Buchen, kein permanentes Tracking) – für Servicetechniker vor Ort ebenso wie für interne Zeiten. Zusätzlich: Kiosk-Login für Mitarbeiter ohne vollen ERP-Zugang (Wandtablet, Personalnummer+PIN, RFID-Schema vorbereitet) – auf dem Server getestet: Gerät angelegt, Personalnummer/PIN gesetzt, Identifizieren-Aufruf liefert korrekten Token samt Vor-/Nachname. Noch offen: eigentlicher zeiterfassung-service (Kommt/Geht/Pause-Ledger, Zustandsprüfung, Arbeitszeit-Berechnung). |
 | Projekt-/Auftragsverwaltung | ⬜ offen | Konfigurierbare Auftragsarten statt starrem Schema: u. a. Fertigungsauftrag, Serviceauftrag/Wartung, Montage-/Bauprojekt, interner Auftrag. Jede Auftragsart kann eigene Zusatzfelder/Status-Workflows haben (gleicher Hybrid-Mechanismus wie bei Artikel/Kunde/Lieferant, siehe feldkatalog.md). Ressourcen-/Einsatzplanung (wer macht wann was, für wen) als gemeinsame Planungskomponente für alle Auftragsarten – deckt sowohl Baustellen-/Montageplanung als auch Servicetechniker-Dispo ab, statt zwei getrennte Spezial-Tools zu bauen. Detailkonzept (Kalenderansicht, Drag&Drop-Planung) folgt bei Umsetzung dieses Moduls. |
 
 ### Fertigung & Anlagenbau (spätere Phase, Datenmodell wird in Phase 1 vorbereitet)

@@ -10,6 +10,17 @@ im vollen Sinn.
 
 ## [Unreleased]
 
+### Zeiterfassung: Kiosk-Login live verifiziert (08.08.2026)
+- Siehe vorherigen Eintrag "Kiosk-Login fuer Zeiterfassung" fuer die
+  Implementierungsdetails
+- Auf dem Server end-to-end getestet: Kiosk-Geraet angelegt (Klartext-API-Key
+  einmalig zurueckgegeben), Personalnummer+PIN-Hash fuer Testbenutzer gesetzt,
+  POST /auth/kiosk/identifizieren liefert korrekten Access-Token samt Vor-/
+  Nachname fuer die Begruessung am Tablet
+- Bug gefunden + behoben (unabhaengig entdeckt): LoginDto erzwang faelschlich
+  dieselbe Mindestlaenge (8 Zeichen) wie beim Anlegen eines Passworts -
+  @MinLength(8) gehoert nur zum Setzen eines Passworts, nicht zur Login-Pruefung
+
 ### Frontend: erste UI fuer Warenwirtschaft (08.08.2026)
 - UI-Bibliothek entschieden: shadcn/ui + Tailwind (Details siehe
   docs/module-uebersicht.md Abschnitt 1)
