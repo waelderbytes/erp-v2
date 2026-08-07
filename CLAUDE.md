@@ -15,6 +15,23 @@ gerade bearbeitet wird oder in welchem Chat.
 - Diese Datei liegt zusaetzlich als `CLAUDE.md` im Repo-Root, damit Claude Code sie
   automatisch beim Start jeder Session laedt.
 
+## 0a. GitHub-Zugangsdaten (Nutzerpräferenz, 08.08.2026 – bewusst akzeptiertes Risiko)
+
+- Der Nutzer hat entschieden, dass der GitHub PAT NICHT in jeder Session neu abgefragt
+  werden soll, obwohl ihm das Sicherheitsrisiko bewusst ist ("ich weiß es ist unsicher").
+- Der Token wird **NICHT** in dieses Repo (weder hier noch in `CLAUDE.md` noch sonstwo
+  versioniert) committet – GitHub Push Protection blockt Pushes mit erkennbaren PAT-
+  Mustern ohnehin, und alles einmal Gepushte bleibt dauerhaft in der Git-History,
+  auch nach nachträglichem Entfernen.
+- Stattdessen liegt der aktuell gültige Token in einer Datei außerhalb des Repos, im
+  persistenten Cowork-Outputs-Ordner: `zugangsdaten-NICHT-COMMITTEN.md`. Diese Datei
+  wird nie `git add`et.
+- Vor jedem Push in einer neuen Session zuerst dort nachsehen, statt den Nutzer erneut
+  nach dem Token zu fragen. Falls der Token dort fehlt oder GitHub ihn als ungültig
+  zurückweist (z. B. nach Rotation durch den Nutzer): erst dann nachfragen.
+- Wird der Token vom Nutzer rotiert/erneuert, muss die Datei entsprechend aktualisiert
+  werden.
+
 ## 1. Commit-Verhalten
 
 - Änderungen in möglichst kleinen, in sich geschlossenen, logischen Einheiten
