@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, UseGu
 import { JwtAuthGuard } from '../../common/auth';
 import { Berechtigung, RbacGuard } from '../../common/rbac';
 import { ArtikelService } from './artikel.service';
+import { ArtikelLogService } from './artikel-log.service';
 import { ArtikelAnlegenDto } from './dto/artikel-anlegen.dto';
 import { ArtikelLieferantZuordnenDto } from './dto/artikel-lieferant-zuordnen.dto';
 import { ArtikelAktualisierenDto } from './dto/artikel-aktualisieren.dto';
@@ -10,7 +11,10 @@ import { ArtikelUebersetzungUpsertDto } from './dto/artikel-uebersetzung-upsert.
 @Controller('artikel')
 @UseGuards(JwtAuthGuard, RbacGuard)
 export class ArtikelController {
-  constructor(private readonly artikelService: ArtikelService) {}
+  constructor(
+    private readonly artikelService: ArtikelService,
+    private readonly artikelLogService: ArtikelLogService,
+  ) {}
 
   @Get()
   @Berechtigung('artikelstamm', 'lesen')
@@ -22,6 +26,14 @@ export class ArtikelController {
   @Berechtigung('artikelstamm', 'lesen')
   find(@Param('id') id: string) {
     return this.artikelService.find(id);
+  }
+
+  // Roadmap-Punkt "Log-Tab": Audit-Trail (audit_log) + Lagerbuchungen fuer
+  // diesen Artikel, kombiniert - Frontend filtert/sortiert/formatiert.
+  @Get(':id/log')
+  @Berechtigung('artikelstamm', 'lesen')
+  log(@Param('id') id: string) {
+    return this.artikelLogService.log(id);
   }
 
   @Post()
