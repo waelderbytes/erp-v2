@@ -27,7 +27,7 @@ export default new DataSource({
     Kunde, KundeAdresse, KundeKontakt, KundeBewertung, Bewertungskriterium,
     Lieferant, LieferantAdresse, LieferantKontakt,
   ],
-  migrations: [__dirname + '/migrations/*.ts'],
+  migrations: [__dirname + '/migrations/*.{ts,js}'], // .ts fuer lokalen ts-node-Lauf, .js fuer den kompilierten dist/-Lauf im Container (siehe migration:run:prod)
   migrationsTableName: 'migrations_erp_service',
   synchronize: false,
 });
