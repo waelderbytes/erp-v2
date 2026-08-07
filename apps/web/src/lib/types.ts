@@ -30,6 +30,7 @@ export interface Artikel {
   interneNotiz: string | null;
   aktiv: boolean;
   bestandsgefuehrt: boolean;
+  bomfaehig: boolean;
 }
 
 export interface ArtikelUebersetzung {

@@ -68,6 +68,13 @@ export class Artikel {
   @Column({ name: 'bestandsgefuehrt', default: false })
   bestandsgefuehrt: boolean;
 
+  // Migration 0011. true nur sinnvoll bei artikelart 'fertigungsartikel'
+  // (im Service erzwungen, siehe artikel.service.ts) - Datenmodell-Vorbereitung
+  // fuer die Stueckliste (BOM), siehe module-uebersicht.md Abschnitt 1.
+  // Stuecklisten-FUNKTIONALITAET selbst kommt erst als eigener Roadmap-Punkt.
+  @Column({ default: false })
+  bomfaehig: boolean;
+
   // Rein internes Notizfeld (z.B. Einkaufskonditionen-Hinweise, Lagerplatz-
   // Besonderheiten) - erscheint NIE auf Belegen, im Unterschied zu
   // 'beschreibung' (Langtext, kann auf Angeboten/Rechnungen landen). Bewusst

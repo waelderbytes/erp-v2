@@ -49,6 +49,7 @@ export class ArtikelService {
       hauptgruppeId: dto.hauptgruppeId ?? null,
       untergruppeId: dto.untergruppeId ?? null,
       bestandsgefuehrt: dto.artikelart !== 'dienstleistung' && (dto.bestandsgefuehrt ?? false),
+      bomfaehig: dto.artikelart === 'fertigungsartikel' && (dto.bomfaehig ?? false),
       einheitId: dto.einheitId ?? null,
       eanGtin: dto.eanGtin ?? null,
       hersteller: dto.hersteller ?? null,
@@ -95,6 +96,10 @@ export class ArtikelService {
     // davon, was uebergeben wird - siehe gleiche Logik in anlegen().
     if (dto.bestandsgefuehrt !== undefined) {
       artikel.bestandsgefuehrt = artikel.artikelart !== 'dienstleistung' && dto.bestandsgefuehrt;
+    }
+    // Analog bestandsgefuehrt: nur bei fertigungsartikel wirksam.
+    if (dto.bomfaehig !== undefined) {
+      artikel.bomfaehig = artikel.artikelart === 'fertigungsartikel' && dto.bomfaehig;
     }
     if (dto.aktiv !== undefined) artikel.aktiv = dto.aktiv;
 

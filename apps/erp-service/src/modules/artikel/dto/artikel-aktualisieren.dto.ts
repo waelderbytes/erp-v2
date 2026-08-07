@@ -40,6 +40,11 @@ export class ArtikelAktualisierenDto {
   @IsBoolean()
   bestandsgefuehrt?: boolean;
 
+  // Nur bei artikelart 'fertigungsartikel' wirksam (siehe artikel.service.ts).
+  @IsOptional()
+  @IsBoolean()
+  bomfaehig?: boolean;
+
   @IsOptional()
   @IsBoolean()
   aktiv?: boolean;

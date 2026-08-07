@@ -213,6 +213,7 @@ function StammdatenTab({
   const [herstellerArtikelnummer, setHerstellerArtikelnummer] = useState(artikel?.herstellerArtikelnummer ?? '');
   const [interneNotiz, setInterneNotiz] = useState(artikel?.interneNotiz ?? '');
   const [bestandsgefuehrt, setBestandsgefuehrt] = useState(artikel?.bestandsgefuehrt ?? false);
+  const [bomfaehig, setBomfaehig] = useState(artikel?.bomfaehig ?? false);
   const [aktiv, setAktiv] = useState(artikel?.aktiv ?? true);
   const [fehler, setFehler] = useState<string | null>(null);
   const [erfolg, setErfolg] = useState(false);
@@ -293,6 +294,7 @@ function StammdatenTab({
           einheitId: einheitId || undefined,
           eanGtin: eanGtin || undefined,
           bestandsgefuehrt: artikelart === 'dienstleistung' ? undefined : bestandsgefuehrt,
+          bomfaehig: artikelart === 'fertigungsartikel' ? bomfaehig : undefined,
           hersteller: hersteller || undefined,
           herstellerArtikelnummer: herstellerArtikelnummer || undefined,
           interneNotiz: interneNotiz || undefined,
@@ -308,6 +310,7 @@ function StammdatenTab({
           herstellerArtikelnummer: herstellerArtikelnummer || undefined,
           interneNotiz: interneNotiz || undefined,
           bestandsgefuehrt,
+          bomfaehig,
           aktiv,
         });
         onGespeichert(aktualisiert, false);
@@ -414,6 +417,12 @@ function StammdatenTab({
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={bestandsgefuehrt} onChange={(e) => setBestandsgefuehrt(e.target.checked)} />
               Bestandsgeführt
+            </label>
+          )}
+          {artikelart === 'fertigungsartikel' && (
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={bomfaehig} onChange={(e) => setBomfaehig(e.target.checked)} />
+              Stücklistenfähig
             </label>
           )}
           <div className="grid grid-cols-2 gap-3">
@@ -1040,6 +1049,7 @@ const ARTIKEL_FELD_LABEL: Record<string, string> = {
   hersteller_artikelnummer: 'Hersteller-Art.-Nr.',
   interne_notiz: 'Interne Notiz',
   bestandsgefuehrt: 'Bestandsgeführt',
+  bomfaehig: 'Stücklistenfähig',
   aktiv: 'Aktiv',
 };
 

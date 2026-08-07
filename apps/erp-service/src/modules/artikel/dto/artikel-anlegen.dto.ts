@@ -25,6 +25,11 @@ export class ArtikelAnlegenDto {
   @IsBoolean()
   bestandsgefuehrt?: boolean;
 
+  // Nur bei artikelart 'fertigungsartikel' wirksam (siehe artikel.service.ts).
+  @IsOptional()
+  @IsBoolean()
+  bomfaehig?: boolean;
+
   @IsOptional()
   @IsUUID()
   einheitId?: string;
