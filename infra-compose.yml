@@ -1,0 +1,52 @@
+# infra-compose.yml - EINMALIG pro Host, NICHT pro Tenant (Gegensatz zu
+# docker-compose.yml, das ist pro Tenant-Stack). Reverse Proxy (Traefik) fuer alle
+# Tenant-Stacks auf diesem Server, siehe docs/architecture.md Abschnitt 8
+# (Hosting-Strategie: mehrere Tenant-Compose-Stacks auf einem gemeinsamen Host).
+#
+# Funktionsweise: Traefik findet Tenant-Services automatisch ueber Docker-Labels
+# (kein manuelles Eintragen einzelner Tenants hier noetig) - vorausgesetzt, der
+# jeweilige Tenant-Service haengt am hier definierten externen Netzwerk
+# "traefik_public" UND hat "traefik.enable=true" gesetzt (siehe docker-compose.yml).
+#
+# HTTPS: Let's Encrypt per HTTP-01-Challenge (kein DNS-Provider-API-Zugriff noetig,
+# funktioniert mit jedem DNS-Anbieter, solange Port 80 von aussen erreichbar ist -
+# UFW hat 80/443 bereits offen, siehe scripts/server-setup.sh). HTTP wird komplett
+# auf HTTPS umgeleitet.
+#
+# Deploy (einmalig, VOR dem ersten Tenant-Stack mit Traefik-Labels):
+#   TRAEFIK_ACME_EMAIL=<eure Kontakt-Mail fuer Let's Encrypt> docker compose -f infra-compose.yml up -d
+# oder die Variable in eine .env im selben Verzeichnis wie diese Datei legen.
+
+services:
+  traefik:
+    image: traefik:v3.1
+    restart: unless-stopped
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=traefik_public"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--certificatesresolvers.le.acme.httpchallenge=true"
+      - "--certificatesresolvers.le.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.le.acme.email=${TRAEFIK_ACME_EMAIL}"
+      - "--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json"
+      # Dashboard bewusst NICHT aktiviert (kein zusaetzliches Angriffsziel) - bei
+      # Bedarf spaeter gezielt mit Basic-Auth-Middleware nachruesten.
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_letsencrypt:/letsencrypt
+    networks:
+      - traefik_public
+
+volumes:
+  traefik_letsencrypt:
+
+networks:
+  traefik_public:
+    name: traefik_public

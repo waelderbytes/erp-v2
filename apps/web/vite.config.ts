@@ -15,7 +15,9 @@ export default defineConfig({
       // Lokale Entwicklung (npm run dev): Backend laeuft nicht im selben Container
       // wie im Produktions-nginx (siehe nginx.conf), deshalb hier ein aequivalenter
       // Proxy fuer `vite dev`.
-      '/api/auth': { target: 'http://localhost:3001', changeOrigin: true, rewrite: (p) => p.replace(/^\/api\/auth/, '') },
+      // Gleiche Logik wie nginx.conf (Produktion): nur "/api" abschneiden, "/auth"
+      // muss erhalten bleiben, siehe Kommentar dort.
+      '/api/auth': { target: 'http://localhost:3001', changeOrigin: true, rewrite: (p) => p.replace(/^\/api/, '') },
       '/api': { target: 'http://localhost:3002', changeOrigin: true, rewrite: (p) => p.replace(/^\/api/, '') },
     },
   },
