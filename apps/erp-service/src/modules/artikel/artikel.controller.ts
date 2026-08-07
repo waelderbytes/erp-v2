@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/auth';
 import { Berechtigung, RbacGuard } from '../../common/rbac';
 import { ArtikelService } from './artikel.service';
@@ -70,7 +70,15 @@ export class ArtikelController {
     return this.artikelService.uebersetzungUpsert(id, sprache, dto);
   }
 
+  // Explizit 204 - Nest gibt bei @Delete() ohne @HttpCode() sonst 200 mit
+  // leerem Body zurueck. Der Frontend-Client (lib/api.ts) behandelt NUR 204
+  // als "keine JSON-Antwort erwarten" - bei 200 mit leerem Body wuerde
+  // response.json() mit "Unexpected end of JSON input" crashen und im
+  // Frontend faelschlich als generischer Fehler ("Loeschen fehlgeschlagen.")
+  // ankommen, obwohl das Loeschen serverseitig erfolgreich war (beobachtet
+  // 07.08.2026).
   @Delete(':id/uebersetzungen/:sprache')
+  @HttpCode(204)
   @Berechtigung('artikelstamm', 'schreiben')
   uebersetzungLoeschen(@Param('id') id: string, @Param('sprache') sprache: string) {
     return this.artikelService.uebersetzungLoeschen(id, sprache);
