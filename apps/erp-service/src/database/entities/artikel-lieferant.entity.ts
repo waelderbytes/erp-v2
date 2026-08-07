@@ -1,10 +1,9 @@
 // n:m Artikel<->Lieferant mit Favoriten-Kennzeichen, siehe docs/feldkatalog.md
-// Abschnitt 1.4. lieferant_id verweist auf die lieferant-Tabelle, die noch nicht
-// existiert (Kunden-/Lieferantenstamm ist eigenes, noch offenes Modul) - daher
-// bewusst KEIN FK-Constraint, nur die Spalte. Wird nachgezogen, sobald die
-// lieferant-Tabelle existiert.
+// Abschnitt 1.4. lieferant_id ist seit der Kunden-/Lieferantenstamm-Migration ein
+// echter FK auf lieferant(id) (siehe Migration 0002_kunden_lieferantenstamm).
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Artikel } from './artikel.entity';
+import { Lieferant } from './lieferant.entity';
 
 @Entity('artikel_lieferant')
 export class ArtikelLieferant {
@@ -19,6 +18,9 @@ export class ArtikelLieferant {
 
   @Column({ name: 'lieferant_id' })
   lieferantId: string;
+
+  @ManyToOne(() => Lieferant)
+  lieferant: Lieferant;
 
   @Column({ name: 'lieferanten_artikelnummer', nullable: true })
   lieferantenArtikelnummer: string | null;

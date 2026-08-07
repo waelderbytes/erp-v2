@@ -65,6 +65,19 @@ im vollen Sinn.
   Bearer-Token -> Artikel angelegt, Nummernkreis vergibt korrekt '00001'
 - Bootstrap-Sperre bestaetigt: zweiter Bootstrap-Versuch wird mit 409 abgelehnt
 
+### Added (08.08.2026) - Kunden-/Lieferantenstamm
+- Kunde/Lieferant-Entities inkl. Adressen (n:1), Kontakte (n:1), Kundenbewertung
+  (Sterne je Kriterium, Kriterien-Katalog `bewertungskriterium` mit Default-Seed:
+  Zahlungsmoral/Zuverlaessigkeit/Kommunikation)
+- Nummernkreis-Anbindung fuer kundennummer/lieferantennummer (generische Engine
+  wiederverwendet, entity_key 'kunden'/'lieferanten' bereits seit Migration 0001 da)
+- `artikel_lieferant.lieferant_id` von loser Spalte zu echtem FK auf `lieferant(id)`
+  nachgezogen (Migration 0002)
+- RBAC-Seed fuer modul_key 'kunden'/'lieferanten' (Sachbearbeiter lesen+schreiben,
+  Lesend nur lesen)
+- Verifiziert: TypeScript-Kompilierung + Nest-Build fehlerfrei - echte DB-Migration
+  auf dem Server noch zu testen
+
 ### Added
 - Projekt-Grundgerüst: Nx-Monorepo-Struktur (Platzhalter-Configs), Docker-Compose für
   lokale Entwicklung, `.env.example`

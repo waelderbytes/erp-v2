@@ -71,7 +71,7 @@ konfigurierbare Zusatzfelder, statt alles hart zu codieren.
 | Preisfindung | ⬜ offen | Staffelpreise, kunden-/artikelspezifische Rabatte, Sonderpreise/Aktionen, zeitlich begrenzte Preise. Muss sowohl Kleinunternehmer (Preise ohne USt-Ausweis) als auch Regelbesteuerer (Netto/Brutto-Anzeige) korrekt bedienen. |
 | Lagerverwaltung | ⬜ offen | Bestände, Lagerorte, Inventur, Bewertung (FIFO/LIFO/Ø) |
 | Einkauf/Bestellwesen | ⬜ offen | Lieferanten, Bestellungen, Artikel↔Lieferant n:m mit Favoriten-Kennzeichen (siehe feldkatalog.md) |
-| Kunden-/Lieferantenstamm | ✅ Feldkatalog erarbeitet | siehe docs/feldkatalog.md – Debitoren-/Kreditorenbezug siehe Phase 3 |
+| Kunden-/Lieferantenstamm | 🚧 Grundfunktionen implementiert (08.08.2026) | erp-service: Kunde/Lieferant inkl. Adressen/Kontakte, Kundenbewertung (Sterne je Kriterium), Nummernkreis-Anbindung, artikel_lieferant jetzt echter FK. RBAC modul_key 'kunden'/'lieferanten'. Noch offen: Update/Löschen-Endpoints, Favoriten-Endpoint mit echtem Lieferanten testen, Debitoren-/Kreditorenbezug (Phase 3) |
 
 ### Kernmodule (Phase 2)
 | Modul | Status | Beschreibung |
