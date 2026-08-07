@@ -10,6 +10,22 @@ im vollen Sinn.
 
 ## [Unreleased]
 
+### Artikel Log-Tab + Bestand-Tab immer sichtbar (08.08.2026)
+- Backend: `GET /artikel/:id/log` (neuer `ArtikelLogService`) liefert
+  Audit-Trail (`audit_log`, roh per DataSource-Query gelesen statt eigener
+  Entity - Tabelle gehoert der auth-service-Migration) + Lagerbuchungen
+  (bestehendes `lagerbewegung`-Ledger) kombiniert
+- Frontend: neuer Tab "Log", chronologisch sortiert, Checkbox "Nur Buchungen
+  anzeigen" blendet reine Aenderungs-Eintraege aus. UPDATE-Eintraege zeigen
+  die tatsaechlich geaenderten Feldnamen (Diff alt/neu)
+- Frontend: "Bestand"-Tab ist jetzt IMMER in der Tab-Liste sichtbar, nur
+  ausgegraut wenn der Artikel nicht bestandsgefuehrt ist (vorher komplett
+  ausgeblendet, z.B. bei Dienstleistungen). Weiter/Zurueck-Navigation
+  ueberspringt deaktivierte Tabs automatisch
+- Verifiziert lokal: erp-service (`tsc --noEmit`, `nest build`), web
+  (`tsc --noEmit`, `vite build`) - alle fehlerfrei. Commits `3fc7d1f`
+  (Backend), `5004a24` (Frontend), gepusht
+
 ### Fix: Migrationslauf schlug fehl - Einheit-Entity fehlte in data-source.ts (08.08.2026)
 - Serverfehler beim Deploy des Einheiten-Moduls: "Entity metadata for
   Artikel#einheit was not found" beim `migration:run:prod`
