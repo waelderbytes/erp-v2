@@ -18,6 +18,7 @@ import {
   ArtikelUebersetzung,
   Artikelart,
   Artikelpreis,
+  Benutzer,
   Einheit,
   Kunde,
   Lager,
@@ -1078,13 +1079,33 @@ function LogTab({ artikelId }: { artikelId: string }) {
   const [log, setLog] = useState<ArtikelLog | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
   const [nurBuchungen, setNurBuchungen] = useState(false);
+  // Benutzer-ID -> Anzeigename. GET /benutzer ist exklusiv Owner/Administrator
+  // vorbehalten (siehe auth-service benutzer.controller.ts) - bei anderen
+  // Rollen schlaegt das mit 403 fehl, dann bleibt es einfach bei der rohen
+  // UUID (kein Absturz, siehe Catch unten).
+  const [benutzerKarte, setBenutzerKarte] = useState<Record<string, string>>({});
 
   useEffect(() => {
     api
       .get<ArtikelLog>(`/artikel/${artikelId}/log`)
       .then(setLog)
       .catch((err) => setFehler(err instanceof ApiError ? err.message : 'Log konnte nicht geladen werden.'));
+    api
+      .get<Benutzer[]>('/benutzer')
+      .then((liste) => {
+        const karte: Record<string, string> = {};
+        liste.forEach((b) => {
+          karte[b.id] = b.vorname || b.nachname ? `${b.vorname ?? ''} ${b.nachname ?? ''}`.trim() : b.email;
+        });
+        setBenutzerKarte(karte);
+      })
+      .catch(() => undefined);
   }, [artikelId]);
+
+  function benutzerAnzeige(id: string | null): string {
+    if (!id) return '–';
+    return benutzerKarte[id] ?? id;
+  }
 
   if (fehler) return <p className="text-sm text-destructive">{fehler}</p>;
   if (!log) return <p className="text-sm text-muted-foreground">Lädt…</p>;
@@ -1164,7 +1185,7 @@ function LogTab({ artikelId }: { artikelId: string }) {
               </TableCell>
               <TableCell className="text-xs">{z.istBuchung ? 'Buchung' : 'Änderung'}</TableCell>
               <TableCell className="text-sm">{z.text}</TableCell>
-              <TableCell className="font-mono text-xs text-muted-foreground">{z.benutzer ?? '–'}</TableCell>
+              <TableCell className="text-xs text-muted-foreground">{benutzerAnzeige(z.benutzer)}</TableCell>
             </TableRow>
           ))}
         </TableBody>
