@@ -5,16 +5,15 @@ gerade bearbeitet wird oder in welchem Chat.
 
 ## 0. Wichtiger Hinweis zur Umgebung
 
-- Im claude.ai-Web-/Mobile-Chat (wie diesem hier) ist die Ausführungsumgebung eine
-  isolierte, temporäre Sandbox: kein Zugriff auf das echte GitHub-Repo, keine
-  gespeicherten Zugangsdaten, Dateisystem setzt sich zwischen Chats zurück. Hier
-  können Dateien erstellt und lokal committet, aber NICHT zum echten Remote gepusht
-  werden.
-- Der vollständige Workflow inkl. Push funktioniert in **Claude Code** (CLI/Desktop-
-  App, mit dem echten lokalen Repo und echten git-Credentials verbunden). Dort gelten
-  die folgenden Regeln vollständig.
-- Empfehlung: Diese Datei zusätzlich als `CLAUDE.md` im Repo-Root ablegen (oder darauf
-  verlinken), damit Claude Code sie automatisch beim Start jeder Session lädt.
+- In Cowork (Sandbox mit Bash + Netzwerkzugriff) kann mit einem vom Nutzer
+  bereitgestellten Personal Access Token real zu GitHub gepusht werden (siehe
+  Abschnitt 1a) - anders als im reinen claude.ai-Web-/Mobile-Chat ohne Bash-Zugriff,
+  wo das NICHT moeglich ist (dort nur lokal committen, Dateien manuell exportieren).
+- Der vollstaendige Workflow inkl. Push funktioniert ausserdem in **Claude Code**
+  (CLI/Desktop-App, mit dem echten lokalen Repo und echten git-Credentials
+  verbunden). Dort gelten die folgenden Regeln vollstaendig.
+- Diese Datei liegt zusaetzlich als `CLAUDE.md` im Repo-Root, damit Claude Code sie
+  automatisch beim Start jeder Session laedt.
 
 ## 1. Commit-Verhalten
 
@@ -29,7 +28,28 @@ gerade bearbeitet wird oder in welchem Chat.
   nachfragen, nicht einfach umsetzen und committen (siehe Nutzerpräferenz: keine
   Annahmen treffen).
 - Kein `git push --force` auf den Hauptbranch, außer explizit angewiesen.
-- Vor dem Push: falls Tests/Linter im Projekt existieren, müssen sie grün sein.
+
+## 1a. Verifizieren VOR jeder Übergabe an den Nutzer (Nutzerpräferenz, 07.08.2026)
+
+Der Nutzer will nicht selbst debuggen müssen, was Claude ungetestet abgeliefert hat.
+Deshalb gilt ab jetzt zwingend, nicht optional:
+
+- Vor jedem "du kannst pullen"/"leg auf dem Server los": **Dependencies installieren
+  und Build tatsächlich durchlaufen lassen** (`npm install`, `npm run build` je
+  betroffenem Service/App), nicht nur Code hinschreiben und hoffen, dass er kompiliert.
+- Falls Tests/Linter im Projekt existieren, müssen sie grün sein (siehe auch Abschnitt
+  3 unten).
+- Schlägt Build/Test fehl: erst reparieren, dann erneut verifizieren – NICHT
+  kaputten Stand committen/pushen und das Debuggen dem Nutzer überlassen.
+- Erst wenn lokal verifiziert: pushen, und dem Nutzer danach IMMER zwei konkrete,
+  copy-paste-fertige Dinge nennen:
+  1. den exakten `git pull`-Befehl (inkl. Zielverzeichnis auf dem Server, falls nicht
+     offensichtlich)
+  2. den/die exakten Docker-Befehl(e), um die Änderung produktiv zu übernehmen (z. B.
+     `docker compose build <service> && docker compose up -d <service>`) – nicht nur
+     "starte den Service neu" als vage Beschreibung.
+- Diese Regel gilt für jede Übergabe, nicht nur für die ersten male – dauerhaft in die
+  Arbeitsweise übernehmen, nicht nur für diesen einen Auth-Service-Commit.
 
 ## 2. Commit-Message-Format (Conventional Commits)
 
