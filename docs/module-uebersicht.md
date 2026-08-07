@@ -67,7 +67,7 @@ konfigurierbare Zusatzfelder, statt alles hart zu codieren.
 ### Warenwirtschaft (Phase 1) — aktueller Fokus
 | Modul | Status | Beschreibung |
 |---|---|---|
-| Artikelstamm | 🚧 Grundfunktionen implementiert (08.08.2026) | erp-service: Nummernkreis-Engine (einfach + kategoriebasiert XXX-YYY-lfd), Firma-Singleton mit Schema-Sperre, Artikel-CRUD, Artikel-Lieferant-Favorit, RBAC scharf (modul_key artikelstamm). Noch offen: i18n bezeichnung, Preisfindung-Anbindung, Variantenartikel, echte einheit/steuersatz-Stammdaten |
+| Artikelstamm | 🚧 Grundfunktionen implementiert, End-to-End live verifiziert (07.08.2026) | erp-service: Nummernkreis-Engine (einfach + kategoriebasiert XXX-YYY-lfd), Firma-Singleton mit Schema-Sperre, Artikel-CRUD, Artikel-Lieferant-Favorit, RBAC scharf (modul_key artikelstamm). Auf dem Server getestet: Login -> JWT -> Artikel anlegen -> Nummernkreis vergibt '00001' korrekt. Noch offen: i18n bezeichnung, Preisfindung-Anbindung, Variantenartikel, echte einheit/steuersatz-Stammdaten |
 | Preisfindung | ⬜ offen | Staffelpreise, kunden-/artikelspezifische Rabatte, Sonderpreise/Aktionen, zeitlich begrenzte Preise. Muss sowohl Kleinunternehmer (Preise ohne USt-Ausweis) als auch Regelbesteuerer (Netto/Brutto-Anzeige) korrekt bedienen. |
 | Lagerverwaltung | ⬜ offen | Bestände, Lagerorte, Inventur, Bewertung (FIFO/LIFO/Ø) |
 | Einkauf/Bestellwesen | ⬜ offen | Lieferanten, Bestellungen, Artikel↔Lieferant n:m mit Favoriten-Kennzeichen (siehe feldkatalog.md) |

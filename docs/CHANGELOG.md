@@ -53,6 +53,18 @@ im vollen Sinn.
 - Bekannte Einschraenkung: REVOKE auf audit_log wirkt nicht gegen den aktuell genutzten
   DB-Owner-User - eigene eingeschraenkte DB-Rolle fuer die Services noch zu schaffen
 
+### Kompletter Stack live verifiziert (07.08.2026)
+- Alle 4 Service-Container (auth-service, erp-service, api-gateway, web) gebaut und
+  gestartet - dabei 3 echte Bugs gefunden und behoben, die in dieser Session vorher
+  nicht auffielen (weil kein 'docker compose build' gegen echtes Docker/Postgres
+  moeglich war): fehlendes tsconfig.json in api-gateway, fehlende index.html in web,
+  DATABASE_URL zeigte auf 'localhost' statt Service-Namen 'postgres' (Container-
+  interne Netzwerkaufloesung)
+- End-to-End-Test erfolgreich: POST /auth/bootstrap -> POST /auth/login -> JWT mit
+  Rollen/Berechtigungen -> POST /artikel (erp-service, anderer Service/Container) mit
+  Bearer-Token -> Artikel angelegt, Nummernkreis vergibt korrekt '00001'
+- Bootstrap-Sperre bestaetigt: zweiter Bootstrap-Versuch wird mit 409 abgelehnt
+
 ### Added
 - Projekt-Grundgerüst: Nx-Monorepo-Struktur (Platzhalter-Configs), Docker-Compose für
   lokale Entwicklung, `.env.example`
