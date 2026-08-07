@@ -25,6 +25,7 @@ import { Lagerbewegung } from './entities/lagerbewegung.entity';
 import { Bestellung } from './entities/bestellung.entity';
 import { Bestellposition } from './entities/bestellposition.entity';
 import { Artikelpreis } from './entities/artikelpreis.entity';
+import { Einheit } from './entities/einheit.entity';
 
 export default new DataSource({
   type: 'postgres',
@@ -36,6 +37,7 @@ export default new DataSource({
     Lager, Lagerbestand, Lagerbewegung,
     Bestellung, Bestellposition,
     Artikelpreis,
+    Einheit,
   ],
   migrations: [__dirname + '/migrations/*.{ts,js}'], // .ts fuer lokalen ts-node-Lauf, .js fuer den kompilierten dist/-Lauf im Container (siehe migration:run:prod)
   migrationsTableName: 'migrations_erp_service',
