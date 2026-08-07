@@ -1,12 +1,42 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 import path from 'node:path';
 
-// PWA-Plugin (vite-plugin-pwa) wird aktiviert, sobald die ersten echten Screens
-// stehen und ein Icon-Set existiert - reine Konfiguration ohne fertige App bringt
-// noch nichts. UI-Bibliothek ist entschieden: shadcn/ui + Tailwind (08.08.2026).
+// PWA-Installierbarkeit (Roadmap-Punkt, Nutzerentscheidung 08.08.2026: generiertes
+// Platzhalter-Icon statt eigenem Logo, siehe apps/web/public/icon-*.png). Bewusst
+// NUR Installierbarkeit (Manifest + Precaching der Build-Assets fuers App-Shell) -
+// KEIN Runtime-Caching von API-Antworten hier, damit z.B. Preise/Bestand nie
+// veraltet aus dem Cache angezeigt werden. Echtes Offline-Caching wichtiger Daten
+// ist laut architecture.md Abschnitt 2 eine spaetere, separate Ausbaustufe.
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
+      manifest: {
+        name: 'WälderBytes ERP',
+        short_name: 'WB ERP',
+        description: 'WälderBytes ERP V2 - Auftrags-/Projektverwaltung und Zeiterfassung',
+        lang: 'de',
+        theme_color: '#1b294b',
+        background_color: '#1b294b',
+        display: 'standalone',
+        start_url: '/',
+        icons: [
+          { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: '/icon-512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ],
+      },
+      workbox: {
+        // Precached wird nur das App-Shell (JS/CSS/HTML/Icons) - siehe Kommentar
+        // oben zu bewusst fehlendem API-Runtime-Caching.
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
+      },
+    }),
+  ],
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },
   },
