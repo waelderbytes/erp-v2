@@ -10,6 +10,24 @@ im vollen Sinn.
 
 ## [Unreleased]
 
+### Artikel-Assistent: Tabs sichtbar + Weiter/Zurueck-Fuehrung (08.08.2026)
+- Nutzerwunsch: geführtere UX beim Artikel-Anlegen, ohne die
+  Speichern-zuerst-Notwendigkeit aufzugeben (Preise/Lieferant-Zuordnung/
+  Sprachen/Bestand haengen per FK an einer echten artikel_id, Bestand ist
+  zusaetzlich eine echte Lagerbuchung - kein Frontend-Entwurf moeglich)
+- Entscheidung nach Ruecksprache (zwei Optionen vorgelegt, siehe Chat-Verlauf):
+  Option B gewaehlt - Struktur/Backend unveraendert, nur Frontend-Navigation
+  verbessert
+- Frontend: alle Tabs (Bestand/Preise/Lieferanten/Sprachen) von Anfang an in
+  der TabsList sichtbar statt erst nach dem Speichern eingeblendet, aber
+  `disabled` + Tooltip "Bitte zuerst Stammdaten speichern", solange kein
+  Artikel existiert
+- Frontend: Weiter/Zurueck-Buttons unterhalb der Tabs; nach dem ersten
+  Speichern der Stammdaten automatischer Sprung zum naechsten Tab
+  (Bestand falls bestandsgefuehrt, sonst Preise)
+- Verifiziert lokal: `tsc --noEmit`, `vite build` (beide fehlerfrei),
+  Commit `57fd72b`, gepusht
+
 ### Fix: "Artikel neu" haengt bei "Laedt..." fest (07.08.2026)
 - Root Cause gefunden (Bug aus session-handoff.md): Route `artikel/neu` in
   `App.tsx` hatte keinen `:id`-Parameter, `useParams().id` lieferte bei
