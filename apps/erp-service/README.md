@@ -1,8 +1,9 @@
 # erp-service
 
 Warenwirtschaft-Module: Artikelstamm + Kunden-/Lieferantenstamm + Lagerverwaltung +
-Einkauf/Bestellwesen (siehe docs/module-uebersicht.md Phase 1). Nutzt dieselbe
-Tenant-DB wie auth-service, eigene Migrations-Historie (migrationsTableName
+Einkauf/Bestellwesen + Preisfindung (siehe docs/module-uebersicht.md Phase 1 -
+damit ist Phase 1 vollstaendig implementiert). Nutzt dieselbe Tenant-DB wie
+auth-service, eigene Migrations-Historie (migrationsTableName
 "migrations_erp_service").
 
 ## Enthaelt
@@ -23,8 +24,15 @@ Tenant-DB wie auth-service, eigene Migrations-Historie (migrationsTableName
   atomar sowohl gelieferte_menge als auch den echten Lagerbestand (ueber
   lagerbewegung.service.ts in derselben Transaktion, referenz_typ/referenz_id auf
   lagerbewegung verlinkt zur Bestellposition)
+- Preisfindung: Staffelpreise, kundenspezifische Preise, zeitlich begrenzte
+  Aktionspreise ueber eine einzige Tabelle `artikelpreis`. Ermittlung
+  (`GET /preise/ermitteln?artikelId=&menge=&kundeId=&datum=`) waehlt
+  kundenspezifisch vor allgemein, danach hoechste `prioritaet`, danach hoechste
+  noch zutreffende `staffel_ab_menge`. Preise sind immer NETTO - Brutto-
+  Berechnung je nach Kleinunternehmer-/Regelbesteuerer-Status ist Aufgabe der
+  spaeteren Belegkette, nicht dieses Moduls
 - RBAC scharf: modul_key "artikelstamm" / "kunden" / "lieferanten" / "lager" /
-  "einkauf"
+  "einkauf" / "preisfindung"
 
 ## Bekannte Einschraenkungen (bewusst, nicht vergessen)
 - Keine i18n-Mehrsprachigkeit bei Artikel-`bezeichnung`
@@ -37,4 +45,8 @@ Tenant-DB wie auth-service, eigene Migrations-Historie (migrationsTableName
   Mindestbestand-/Meldebestand-Logik
 - Einkauf: keine Teil-Stornierung einzelner Positionen, kein Genehmigungsprozess,
   kein Preisvergleich/Anfragen-Workflow (MVP)
+- Preisfindung: keine Multi-Currency-Unterstuetzung (nur EUR implizit), keine
+  Update/Loeschen-Endpoints (nur Anlegen/Lesen), Aktionspreise ohne explizite
+  Kollisionspruefung bei ueberlappenden Zeitraeumen gleicher Prioritaet (letzte
+  Sortierung entscheidet deterministisch, aber nicht immer intuitiv)
 - `libs/common`-Code hier unter `src/common/` dupliziert (Docker-Build-Context-Grund)

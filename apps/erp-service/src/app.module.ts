@@ -20,6 +20,7 @@ import { Lagerbestand } from './database/entities/lagerbestand.entity';
 import { Lagerbewegung } from './database/entities/lagerbewegung.entity';
 import { Bestellung } from './database/entities/bestellung.entity';
 import { Bestellposition } from './database/entities/bestellposition.entity';
+import { Artikelpreis } from './database/entities/artikelpreis.entity';
 import { ArtikelModule } from './modules/artikel/artikel.module';
 import { FirmaModule } from './modules/firma/firma.module';
 import { NummernkreisModule } from './modules/nummernkreis/nummernkreis.module';
@@ -27,6 +28,7 @@ import { KundeModule } from './modules/kunde/kunde.module';
 import { LieferantModule } from './modules/lieferant/lieferant.module';
 import { LagerModule } from './modules/lager/lager.module';
 import { EinkaufModule } from './modules/einkauf/einkauf.module';
+import { PreisfindungModule } from './modules/preisfindung/preisfindung.module';
 
 @Module({
   imports: [
@@ -36,7 +38,7 @@ import { EinkaufModule } from './modules/einkauf/einkauf.module';
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         url: config.get('DATABASE_URL'),
-        entities: [Artikel, ArtikelLieferant, Artikelkategorie, ArtikelkategorieZuordnung, Firma, Nummernkreis, Kunde, KundeAdresse, KundeKontakt, KundeBewertung, Bewertungskriterium, Lieferant, LieferantAdresse, LieferantKontakt, Lager, Lagerbestand, Lagerbewegung, Bestellung, Bestellposition],
+        entities: [Artikel, ArtikelLieferant, Artikelkategorie, ArtikelkategorieZuordnung, Firma, Nummernkreis, Kunde, KundeAdresse, KundeKontakt, KundeBewertung, Bewertungskriterium, Lieferant, LieferantAdresse, LieferantKontakt, Lager, Lagerbestand, Lagerbewegung, Bestellung, Bestellposition, Artikelpreis],
         synchronize: false, // Schema ausschliesslich per Migration, siehe CLAUDE.md
       }),
     }),
@@ -47,6 +49,7 @@ import { EinkaufModule } from './modules/einkauf/einkauf.module';
     LieferantModule,
     LagerModule,
     EinkaufModule,
+    PreisfindungModule,
   ],
 })
 export class AppModule {}
