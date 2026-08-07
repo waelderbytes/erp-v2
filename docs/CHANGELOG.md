@@ -10,6 +10,22 @@ im vollen Sinn.
 
 ## [Unreleased]
 
+### Fix: Log-Tab zeigte UUID statt Benutzername (08.08.2026)
+- Nutzer-Report: "Benutzer nicht aufgeschlüsselt, manchmal -"
+- Ursache 1 (behoben): Lagerbuchungen zeigten die rohe `gebuchtVon`-UUID -
+  Log-Tab lädt jetzt zusätzlich `GET /benutzer` und löst über eine Karte
+  id→Name/E-Mail auf (fällt bei 403 - nicht Owner/Administrator - auf die
+  rohe UUID zurück statt abzustürzen)
+- Ursache 2 (dokumentiert, bewusst NICHT gefixt): das "-" bei Audit-
+  Einträgen ist kein Anzeigefehler - `audit_log.changed_by` ist seit der
+  allerersten auth-service-Migration IMMER NULL, weil kein Service jemals
+  `SET LOCAL app.current_user_id` setzt. Vorbestehende, projektweite
+  Architektur-Lücke, korrekter Fix bräuchte Request-weite Transaktionen
+  über praktisch alle Schreibpfade - nach Rückfrage bewusst zurückgestellt,
+  siehe session-handoff.md
+- Verifiziert lokal: `tsc --noEmit`, `vite build` (beide fehlerfrei).
+  Commit `c6ac11c`, gepusht
+
 ### Stückliste (BOM), mehrstufig (08.08.2026)
 - Nutzerentscheidung nach Rückfrage (siehe Chat-Verlauf): volle mehrstufige
   Variante, feste Menge pro Position (kein Verschnitt-Feld), nur echte

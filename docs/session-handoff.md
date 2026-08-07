@@ -6,7 +6,7 @@ Diese Zusammenfassung ist für einen neuen Claude-Chat gedacht (Geräte-/Session
 
 Multi-Tenant-ERP-System "WälderBytes ERP V2", von Grund auf neu gebaut (nicht die alte "waelderbytes-suite" v1). Ziel: vollumfängliches ERP mit Auftrags-/Projektverwaltung und Zeiterfassung, als Webapp, self-hosted oder als Abo buchbar, modular erweiterbar, DSGVO-konform.
 
-**Repo:** `https://github.com/waelderbytes/erp-v2.git` (aktueller Stand HEAD: Commit `a094e5a`)
+**Repo:** `https://github.com/waelderbytes/erp-v2.git` (aktueller Stand HEAD: Commit `c6ac11c`)
 **Server:** Hetzner CPX22, `test.wbyt.app`, Deploy via Docker Compose + Traefik
 **PAT/Zugangsdaten:** liegen in der Cowork-Outputs-Datei `zugangsdaten-NICHT-COMMITTEN.md` — NIE ins Repo committen (Regeln.md Abschnitt 0a)
 
@@ -34,6 +34,7 @@ Multi-Tenant-ERP-System "WälderBytes ERP V2", von Grund auf neu gebaut (nicht d
 13. PWA-Installierbarkeit (`vite-plugin-pwa` aktiviert, generierte Platzhalter-Icons) — gepusht (Commit `adfafe4`), **Deploy auf dem Server noch nicht bestätigt**
 14. `artikel.bomfaehig`-Flag nachgezogen (Migration 0011, Vorbereitung Stückliste/BOM) — gepusht (Commit `2bff571`), **Deploy/Migration auf dem Server noch nicht bestätigt**
 15. Stückliste (BOM), mehrstufig: `stueckliste_position` (selbstreferenzierend über artikel), Zirkelbezug-Schutz per BFS, Tab "Stückliste" mit Baumansicht + druckbarer komplett aufgelöster Strukturstückliste — gepusht (Commits `5cf5383`/`83bb523`/`a094e5a`), **NOCH NICHT deployt, Migration 0012 lokal nicht gegen echte DB testbar (Sandbox ohne Postgres) — auf dem Testserver besonders sorgfältig prüfen (Zirkelbezug-Fehlermeldung testen, mehrstufig anlegen)**
+16. Log-Tab loest Benutzer-UUID zu Namen auf (laedt zusaetzlich `GET /benutzer`, faellt bei 403 auf rohe UUID zurueck) — gepusht (Commit `c6ac11c`), **Deploy steht aus**
 
 ## Offene Baustelle gerade eben
 
@@ -60,6 +61,25 @@ Offener Nebenpunkt (nicht code-, sondern server-seitig): `docker compose`-Warnun
 1. **502 Bad Gateway**: `ArtikelUebersetzung`-Repository war im globalen TypeORM registriert und in `ArtikelService` injiziert, aber NICHT in `ArtikelModule`s eigenem `TypeOrmModule.forFeature([...])` — das ist ein DI-Wiring-Fehler, der bei `tsc --noEmit`/`nest build` NICHT auffällt, sondern erst beim echten App-Start. Das ist bereits mehrfach im Projekt passiert (auch bei `LagerModule` früher). **Merke: nach jeder neuen Entity/Repository immer prüfen, ob jedes Modul, das sie injiziert, sie auch in seinem eigenen `forFeature()` hat.**
 2. **Internal Server Error** ("column Artikel.interne_notiz does not exist"): Migration war im Image, aber nicht auf der Produktions-DB ausgeführt worden. Merke: nach jedem Feature-Deploy mit Schema-Änderung explizit `docker compose exec erp-service npm run migration:run:prod` in der Deploy-Anleitung hervorheben.
 3. **"Entity metadata for Artikel#einheit was not found"** beim Migrationslauf (08.08.2026, Einheiten-Modul): `src/database/data-source.ts` (eigene DataSource NUR für den Migrations-CLI-Lauf, komplett getrennt von `app.module.ts`s `TypeOrmModule.forRootAsync`-Entities-Liste) hatte die neue `Einheit`-Entity nicht in seiner `entities`-Liste, obwohl `Artikel` per `@ManyToOne` darauf verweist. **Dritte Stelle zur bisherigen DI-Wiring-Merkregel: bei jeder neuen Entity mit Relation IMMER drei Stellen prüfen — (a) jedes injizierende Modul's `forFeature()`, (b) `app.module.ts`s globale `entities`-Liste, (c) `database/data-source.ts`s `entities`-Liste (Migrations-DataSource).** `tsc --noEmit`/`nest build` schlagen bei sowas NICHT an, der Fehler zeigt sich erst beim echten Migrationslauf auf dem Server.
+
+## Bekannte, noch nicht behobene Lücke: audit_log.changed_by immer NULL
+
+Nutzer-Report (08.08.2026): im Log-Tab steht bei Audit-Eintraegen (Aenderungen,
+nicht Lagerbuchungen) immer "-" statt eines Benutzers. **Kein Anzeigefehler**:
+`audit_log.changed_by` ist seit der allerersten auth-service-Migration
+(0001_initial_schema.ts) fuer JEDE Tabelle mit Audit-Trigger IMMER NULL, weil
+kein einziger Service jemals die Postgres-Session-Variable
+`app.current_user_id` setzt, die der Trigger via `current_setting(...)`
+ausliest (siehe `audit_trigger_fn` dort). `SET LOCAL` wirkt nur innerhalb
+einer Transaktion - die aktuellen Schreibzugriffe laufen aber als einzelne,
+implizite Mini-Transaktionen ohne gemeinsame, request-weite Connection. Ein
+korrekter Fix braucht eine Request-weite Transaktion (jeder authentifizierte
+Request bekommt eine eigene DB-Connection/EntityManager, alle
+Repository-Zugriffe waehrend des Requests laufen darueber) - das betrifft
+praktisch jeden Schreibpfad im gesamten Backend (alle drei Services), nicht
+nur Artikel. Nutzerentscheidung nach Rueckfrage (08.08.2026): NICHT jetzt
+angehen, nur dokumentieren. Bei Bedarf spaeter als eigenes, bewusst
+priorisiertes Vorhaben angehen, nicht nebenbei.
 
 ## Wichtige technische Patterns/Konventionen
 
