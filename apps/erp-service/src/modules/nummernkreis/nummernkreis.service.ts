@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { Nummernkreis } from '../../database/entities/nummernkreis.entity';
 import { NUMMERNKREIS_DEFAULT_LABELS } from './nummernkreis.entity-labels';
+import { NummernkreisAktualisierenDto } from './dto/nummernkreis-aktualisieren.dto';
 
 // Siehe docs/architecture.md Abschnitt 6 fuer die volle Begruendung. Kernpunkte:
 // - SELECT ... FOR UPDATE als Row-Lock statt Advisory-Lock/optimistischem Retry
@@ -11,6 +12,39 @@ import { NUMMERNKREIS_DEFAULT_LABELS } from './nummernkreis.entity-labels';
 @Injectable()
 export class NummernkreisService {
   constructor(private readonly dataSource: DataSource) {}
+
+  // Fuer die Verwaltungs-UI (Modul Stammdaten/System-Einstellungen) - liefert
+  // alle Nummernkreise inkl. aktuellem Stand (naechste Nummer siehe
+  // previewNaechsteNummer, hier nur die Rohdaten).
+  async liste(): Promise<Nummernkreis[]> {
+    await this.ensureNummernkreise();
+    return this.dataSource.getRepository(Nummernkreis).find({ order: { entityKey: 'ASC' } });
+  }
+
+  // prefix/stellen sind jederzeit aenderbar (betreffen nur die Formatierung
+  // kuenftiger Nummern, analog firma.artikelnummernStellen). startValue
+  // dagegen NUR, solange der Kreis noch unbenutzt ist (naechster Wert ==
+  // Startwert) - sonst koennten bereits vergebene Nummern erneut vergeben
+  // werden (siehe architecture.md Abschnitt 6).
+  async aktualisieren(entityKey: string, dto: NummernkreisAktualisierenDto): Promise<Nummernkreis> {
+    const repo = this.dataSource.getRepository(Nummernkreis);
+    const kreis = await repo.findOneBy({ entityKey });
+    if (!kreis) {
+      throw new NotFoundException(`Nummernkreis '${entityKey}' nicht gefunden.`);
+    }
+    if (dto.prefix !== undefined) kreis.prefix = dto.prefix;
+    if (dto.stellen !== undefined) kreis.stellen = dto.stellen;
+    if (dto.startValue !== undefined) {
+      if (kreis.nextValue !== kreis.startValue) {
+        throw new ConflictException(
+          `Startwert von '${entityKey}' kann nicht mehr geaendert werden - es wurde bereits mindestens eine Nummer vergeben.`,
+        );
+      }
+      kreis.startValue = dto.startValue;
+      kreis.nextValue = dto.startValue;
+    }
+    return repo.save(kreis);
+  }
 
   async ensureNummernkreise(): Promise<void> {
     const repo = this.dataSource.getRepository(Nummernkreis);

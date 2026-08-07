@@ -56,6 +56,7 @@ export class ArtikelService {
       hoeheMm: dto.hoeheMm ?? null,
       mindestbestand: dto.mindestbestand ?? null,
       einheitId: dto.einheitId ?? null,
+      steuersatzId: dto.steuersatzId,
       eanGtin: dto.eanGtin ?? null,
       hersteller: dto.hersteller ?? null,
       herstellerArtikelnummer: dto.herstellerArtikelnummer ?? null,
@@ -78,11 +79,11 @@ export class ArtikelService {
   }
 
   liste(): Promise<Artikel[]> {
-    return this.artikelRepo.find({ order: { artikelnummer: 'ASC' }, relations: ['einheit'] });
+    return this.artikelRepo.find({ order: { artikelnummer: 'ASC' }, relations: ['einheit', 'steuersatz'] });
   }
 
   find(id: string): Promise<Artikel | null> {
-    return this.artikelRepo.findOne({ where: { id }, relations: ['einheit'] });
+    return this.artikelRepo.findOne({ where: { id }, relations: ['einheit', 'steuersatz'] });
   }
 
   async aktualisieren(id: string, dto: ArtikelAktualisierenDto): Promise<Artikel> {
@@ -93,6 +94,7 @@ export class ArtikelService {
     if (dto.bezeichnung !== undefined) artikel.bezeichnung = dto.bezeichnung;
     if (dto.beschreibung !== undefined) artikel.beschreibung = dto.beschreibung;
     if (dto.einheitId !== undefined) artikel.einheitId = dto.einheitId;
+    if (dto.steuersatzId !== undefined) artikel.steuersatzId = dto.steuersatzId;
     if (dto.eanGtin !== undefined) artikel.eanGtin = dto.eanGtin;
     if (dto.hersteller !== undefined) artikel.hersteller = dto.hersteller;
     if (dto.herstellerArtikelnummer !== undefined) artikel.herstellerArtikelnummer = dto.herstellerArtikelnummer;

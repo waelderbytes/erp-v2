@@ -24,6 +24,7 @@ import { Bestellposition } from './database/entities/bestellposition.entity';
 import { Artikelpreis } from './database/entities/artikelpreis.entity';
 import { Einheit } from './database/entities/einheit.entity';
 import { StuecklistePosition } from './database/entities/stueckliste-position.entity';
+import { Steuersatz } from './database/entities/steuersatz.entity';
 import { ArtikelModule } from './modules/artikel/artikel.module';
 import { FirmaModule } from './modules/firma/firma.module';
 import { NummernkreisModule } from './modules/nummernkreis/nummernkreis.module';
@@ -33,6 +34,7 @@ import { LagerModule } from './modules/lager/lager.module';
 import { EinkaufModule } from './modules/einkauf/einkauf.module';
 import { PreisfindungModule } from './modules/preisfindung/preisfindung.module';
 import { EinheitModule } from './modules/einheit/einheit.module';
+import { SteuersatzModule } from './modules/steuersatz/steuersatz.module';
 
 @Module({
   imports: [
@@ -42,7 +44,7 @@ import { EinheitModule } from './modules/einheit/einheit.module';
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         url: config.get('DATABASE_URL'),
-        entities: [Artikel, ArtikelUebersetzung, ArtikelLieferant, Artikelkategorie, ArtikelkategorieZuordnung, Firma, Nummernkreis, Kunde, KundeAdresse, KundeKontakt, KundeBewertung, Bewertungskriterium, Lieferant, LieferantAdresse, LieferantKontakt, Lager, Lagerbestand, Lagerbewegung, Bestellung, Bestellposition, Artikelpreis, Einheit, StuecklistePosition],
+        entities: [Artikel, ArtikelUebersetzung, ArtikelLieferant, Artikelkategorie, ArtikelkategorieZuordnung, Firma, Nummernkreis, Kunde, KundeAdresse, KundeKontakt, KundeBewertung, Bewertungskriterium, Lieferant, LieferantAdresse, LieferantKontakt, Lager, Lagerbestand, Lagerbewegung, Bestellung, Bestellposition, Artikelpreis, Einheit, StuecklistePosition, Steuersatz],
         synchronize: false, // Schema ausschliesslich per Migration, siehe CLAUDE.md
       }),
     }),
@@ -55,6 +57,7 @@ import { EinheitModule } from './modules/einheit/einheit.module';
     EinkaufModule,
     PreisfindungModule,
     EinheitModule,
+    SteuersatzModule,
   ],
 })
 export class AppModule {}

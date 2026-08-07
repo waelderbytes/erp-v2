@@ -21,6 +21,10 @@ export class ArtikelAktualisierenDto {
   einheitId?: string;
 
   @IsOptional()
+  @IsUUID()
+  steuersatzId?: string;
+
+  @IsOptional()
   @IsString()
   eanGtin?: string;
 

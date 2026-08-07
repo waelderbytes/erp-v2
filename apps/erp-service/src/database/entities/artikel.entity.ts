@@ -1,13 +1,12 @@
 // Kernfelder gemaess docs/feldkatalog.md Abschnitt 1.1/1.2. i18n-Mehrsprachigkeit
 // (bezeichnung als uebersetzbares Feld) bewusst NICHT Teil dieser ersten Version -
 // aktuell einfaches String-Feld, i18n-Tabelle folgt als eigener Schritt (siehe
-// Offene Punkte in README dieses Moduls). Ebenso: steuersatz_id ist noch keine
-// FK auf eine eigene Stammdaten-Tabelle (die gibt es noch nicht), sondern ein
-// einfacher String-Platzhalter - wird nachgezogen, sobald das Modul
-// Stammdaten/System-Einstellungen existiert. Ausnahme seit Migration 0010:
-// einheit_id ist bereits eine echte FK (siehe einheit.entity.ts).
+// Offene Punkte in README dieses Moduls). einheit_id (Migration 0010) und
+// steuersatz_id (Migration 0015) sind beide echte Pflicht-FKs auf eigene
+// Stammdaten-Tabellen.
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { Einheit } from './einheit.entity';
+import { Steuersatz } from './steuersatz.entity';
 
 export type Artikelart = 'handelsware' | 'dienstleistung' | 'fertigungsartikel';
 
@@ -45,6 +44,17 @@ export class Artikel {
   @ManyToOne(() => Einheit, { nullable: true })
   @JoinColumn({ name: 'einheit_id' })
   einheit?: Einheit;
+
+  // Migration 0015: Pflicht-FK auf steuersatz (feldkatalog.md), unabhaengig
+  // vom Kleinunternehmer-Flag der Firma - der Steuersatz gehoert zum
+  // Artikel, die Kleinunternehmerregelung entscheidet erst auf Belegebene,
+  // ob ueberhaupt USt. ausgewiesen wird (Belegkette-Modul, noch nicht gebaut).
+  @Column({ name: 'steuersatz_id' })
+  steuersatzId: string;
+
+  @ManyToOne(() => Steuersatz)
+  @JoinColumn({ name: 'steuersatz_id' })
+  steuersatz?: Steuersatz;
 
   @Column({ name: 'ean_gtin', nullable: true })
   eanGtin: string | null;

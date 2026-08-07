@@ -56,6 +56,10 @@ export class ArtikelAnlegenDto {
   @IsUUID()
   einheitId?: string;
 
+  // Pflicht (feldkatalog.md) - anders als einheitId, das optional bleibt.
+  @IsUUID()
+  steuersatzId: string;
+
   @IsOptional()
   @IsString()
   eanGtin?: string;
