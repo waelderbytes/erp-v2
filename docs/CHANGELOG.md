@@ -10,6 +10,23 @@ im vollen Sinn.
 
 ## [Unreleased]
 
+### Lagerverwaltung live verifiziert (08.08.2026)
+- Neue Endpoints: `GET/POST /lager`, `GET /lager/:id/bestand`, `GET
+  /lager/artikel/:artikelId/bestand`, `POST /lagerbewegung/wareneingang`, `POST
+  /lagerbewegung/warenausgang`, `POST /lagerbewegung/umbuchung`, `POST
+  /lagerbewegung/inventur`
+- Migration 0004_lagerverwaltung: `lager`, `lagerbestand` (UNIQUE artikel_id+
+  lager_id), `lagerbewegung` (unveraenderliches Ledger, vorzeichenbehaftetes
+  Delta), partieller Unique-Index fuer "hoechstens 1 Standardlager", RBAC-Seed
+  modul_key 'lager'
+- Buchungslogik race-condition-sicher per Row-Lock (`SELECT ... FOR UPDATE`),
+  gleiches Muster wie die Nummernkreis-Engine
+- Auf dem Server end-to-end getestet: Lager anlegen, Wareneingang (25),
+  Bestandsgrenze bei Warenausgang korrekt mit 409/ConflictException abgelehnt
+  (nicht 500), Umbuchung zwischen zwei Lagern (zwei verknuepfte Bewegungszeilen
+  ueber umbuchung_gruppe_id), Inventurkorrektur mit korrekt berechnetem Delta -
+  Endbestand per direkter DB-Abfrage bestaetigt (12.000 / 10.000)
+
 ### Kunden-/Lieferantenstamm live verifiziert (08.08.2026)
 - Neue Endpoints: `POST /kunden`, `GET /kunden`, `GET /kunden/:id`, `POST
   /kunden/:id/bewertungen`, `GET /kunden/:id/bewertungen`, `POST /lieferanten`, `GET
