@@ -6,7 +6,7 @@ Diese Zusammenfassung ist für einen neuen Claude-Chat gedacht (Geräte-/Session
 
 Multi-Tenant-ERP-System "WälderBytes ERP V2", von Grund auf neu gebaut (nicht die alte "waelderbytes-suite" v1). Ziel: vollumfängliches ERP mit Auftrags-/Projektverwaltung und Zeiterfassung, als Webapp, self-hosted oder als Abo buchbar, modular erweiterbar, DSGVO-konform.
 
-**Repo:** `https://github.com/waelderbytes/erp-v2.git` (aktueller Stand HEAD: Commit `6b60670`)
+**Repo:** `https://github.com/waelderbytes/erp-v2.git` (aktueller Stand HEAD: Commit `d0829eb`, siehe unten fuer Details zu den einzelnen Commits dieser Session)
 **Server:** Hetzner CPX22, `test.wbyt.app`, Deploy via Docker Compose + Traefik
 **PAT/Zugangsdaten:** liegen in der Cowork-Outputs-Datei `zugangsdaten-NICHT-COMMITTEN.md` — NIE ins Repo committen (Regeln.md Abschnitt 0a)
 
@@ -35,11 +35,13 @@ Multi-Tenant-ERP-System "WälderBytes ERP V2", von Grund auf neu gebaut (nicht d
 14. `artikel.bomfaehig`-Flag nachgezogen (Migration 0011, Vorbereitung Stückliste/BOM) — gepusht (Commit `2bff571`), **Deploy/Migration auf dem Server noch nicht bestätigt**
 15. Stückliste (BOM), mehrstufig: `stueckliste_position` (selbstreferenzierend über artikel), Zirkelbezug-Schutz per BFS, Tab "Stückliste" mit Baumansicht + druckbarer komplett aufgelöster Strukturstückliste — gepusht (Commits `5cf5383`/`83bb523`/`a094e5a`), **NOCH NICHT deployt, Migration 0012 lokal nicht gegen echte DB testbar (Sandbox ohne Postgres) — auf dem Testserver besonders sorgfältig prüfen (Zirkelbezug-Fehlermeldung testen, mehrstufig anlegen)**
 16. Log-Tab loest Benutzer-UUID zu Namen auf (laedt zusaetzlich `GET /benutzer`, faellt bei 403 auf rohe UUID zurueck) — gepusht (Commit `c6ac11c`), **Deploy steht aus**
-17. Letzte Feldkatalog-Luecken bei Artikel: `gewicht_kg`, `laenge_mm`/`breite_mm`/`hoehe_mm`, `mindestbestand` (Migration 0013) — gepusht (Commits `98031b1`/`999094e`), **Deploy/Migration steht aus**. Damit ist der Feldkatalog-Abgleich (siehe Abschnitt weiter unten) komplett abgearbeitet bis auf `steuersatz_id` (wartet auf Modul Stammdaten/System-Einstellungen)
+17. Letzte Feldkatalog-Luecken bei Artikel: `gewicht_kg`, `laenge_mm`/`breite_mm`/`hoehe_mm`, `mindestbestand` (Migration 0013) — gepusht (Commits `98031b1`/`999094e`), **Deploy/Migration steht aus**. Damit war der Feldkatalog-Abgleich bis auf `steuersatz_id` komplett
+18. **Modul Stammdaten/System-Einstellungen** (Backend+Frontend, 08.08.2026): Nutzerentscheidung erstmal 1 Firma (kein Mehrfirmen-Umbau). Steuersaetze (Migration 0014, Seed 19/7/0%), `artikel.steuersatz_id` jetzt echte Pflicht-FK (Migration 0015 — **damit ist der Feldkatalog-Abgleich jetzt wirklich vollstaendig abgearbeitet**), Firmenstammdaten (Migration 0016: Name/Anschrift/USt-IdNr./Steuernummer/Telefon/E-Mail/Kleinunternehmer-Flag). Neue Endpoints unter modul_key `stammdaten` (`GET/PATCH /firma`, `POST /firma/artikelnummern-schema`, `PATCH /firma/artikelnummern-stellen`, `GET/POST/PATCH /steuersaetze`, `GET/PATCH /nummernkreise/:entityKey`). Frontend: Seite `/stammdaten` (Tabs Firma/Steuersaetze/Nummernkreise), Steuersatz-Pflichtfeld im Artikel-Stammdaten-Tab — gepusht (Commits `1209dd3` Backend, `657b161` Frontend, `d0829eb` Docs), **NOCH NICHT deployt, Migrationen 0014-0016 lokal nicht gegen echte DB testbar**
+19. **Reset-/Seed-Skripte fuer Testdaten** (08.08.2026): `scripts/reset-testdaten.sql` (leert nur Bewegungsdaten, Stammdaten/Konfiguration bleibt, `nummernkreis.next_value` wird zurueckgesetzt, `audit_log` nur scoped bereinigt statt pauschal geleert — siehe architecture.md Abschnitt 5, Unveraenderlichkeit) + `apps/erp-service/src/database/seed-testdaten.ts` (`npm run seed:testdaten`, legt Testdaten ueber die echten Services an, jederzeit wiederholt ausfuehrbar) — gepusht (Commit `a724a5d`), **noch nicht auf dem Server ausgefuehrt/verifiziert**
 
 ## Offene Baustelle gerade eben
 
-Nutzer ist schlafen gegangen, Claude hat autonom weitergearbeitet (08.08.2026, Abend). ALLE Punkte dieser Session (Log-Tab, Bestand-Tab-immer-sichtbar, PWA, `bomfaehig`, Stückliste/BOM, Log-Tab-Benutzernamen, Masse/Mindestbestand) sind CODE-fertig, lokal verifiziert und gepusht - **aber NICHTS davon ist auf dem Server deployt/bestätigt**, seit dem letzten bestätigten "lief durch" (Einheiten-Modul). Konsolidierter Deploy-Befehl fuer ALLES auf einmal:
+ALLE Punkte dieser Session (Log-Tab, Bestand-Tab-immer-sichtbar, PWA, `bomfaehig`, Stückliste/BOM, Log-Tab-Benutzernamen, Masse/Mindestbestand, Modul Stammdaten/System-Einstellungen, Reset-/Seed-Skripte) sind CODE-fertig, lokal verifiziert und gepusht - **aber NICHTS davon ist auf dem Server deployt/bestätigt**, seit dem letzten bestätigten "lief durch" (Einheiten-Modul). Konsolidierter Deploy-Befehl fuer ALLES auf einmal:
 
 ```bash
 cd /opt/erp-v2
@@ -49,15 +51,18 @@ docker compose up -d erp-service web
 docker compose exec erp-service npm run migration:run:prod
 ```
 
-Das fuehrt Migrationen 0011-0013 in einem Rutsch aus (`bomfaehig`, Stueckliste, Masse/Mindestbestand). **Wichtig**: Migration 0012 (Stueckliste) konnte lokal NICHT gegen eine echte Postgres-DB getestet werden (Cowork-Sandbox hat keinen Docker/Postgres-Zugriff, kein root fuer apt). Nach dem Deploy auf dem Testserver gezielt pruefen:
+Das fuehrt Migrationen 0011-0016 in einem Rutsch aus (`bomfaehig`, Stueckliste, Masse/Mindestbestand, Steuersaetze, `artikel.steuersatz_id`, Firmenstammdaten). **Wichtig**: Migrationen 0012 und 0014-0016 konnten lokal NICHT gegen eine echte Postgres-DB getestet werden (Cowork-Sandbox hat keinen Docker/Postgres-Zugriff, kein root fuer apt). Nach dem Deploy auf dem Testserver gezielt pruefen:
 - Mehrstufige Stueckliste anlegen (Fertigungsartikel A enthaelt B enthaelt Handelsware C), Baumansicht aufklappen
 - Zirkelbezug-Versuch (C enthaelt A hinzufuegen) MUSS mit klarer Fehlermeldung abgelehnt werden
 - "Strukturstückliste drucken" oeffnet ein Druckfenster mit allen Ebenen
 - Log-Tab zeigt bei Lagerbuchungen jetzt einen Namen statt einer UUID (bei Audit-Eintraegen bleibt "-", siehe eigene Sektion dazu weiter unten - bewusst nicht gefixt)
+- Migration 0015 (Backfill `artikel.steuersatz_id` auf den Standard-Steuersatz fuer bestehende Artikel, dann `NOT NULL`) auf bestehenden Testdaten pruefen - falls auf dem Server bereits Artikel existieren, muessen die danach alle einen Steuersatz haben (per DB-Abfrage kontrollieren)
+- Seite `/stammdaten` oeffnen (Nav-Gruppe "Verwaltung", nur Owner/Administrator), alle drei Tabs (Firma/Steuersaetze/Nummernkreise) durchklicken, Firmenstammdaten speichern, einen Testartikel mit Steuersatz-Auswahl anlegen
+- Danach optional `scripts/reset-testdaten.sql` + `npm run seed:testdaten:prod` einmal durchspielen (siehe eigene Sektion unten) - dabei den Effekt auf `nummernkreis.next_value` pruefen
 
-Alle groesseren Entscheidungen dieser Session (Stückliste-Datenmodell, Log-Benutzer-Fix-Umfang) wurden VOR der Umsetzung per Rueckfrage mit dem User abgestimmt, nicht geraten.
+Alle groesseren Entscheidungen dieser Session (Stückliste-Datenmodell, Log-Benutzer-Fix-Umfang, Stammdaten erstmal 1 Firma, Reset-Umfang nur Bewegungsdaten, Seed ueber echte Services) wurden VOR der Umsetzung per Rueckfrage mit dem User abgestimmt, nicht geraten.
 
-Naechster Schritt nach bestätigtem Deploy: keine offenen Roadmap-Punkte mehr aus der bisherigen Liste - neue Prioritaeten mit dem User klaeren (z.B. Materialbedarfsplanung/Fertigungsauftraege als Folgeschritt der Stückliste, oder ein anderes Modul aus module-uebersicht.md).
+Naechster Schritt nach bestätigtem Deploy: keine offenen Roadmap-Punkte mehr aus der bisherigen Liste - neue Prioritaeten mit dem User klaeren (z.B. Materialbedarfsplanung/Fertigungsauftraege als Folgeschritt der Stückliste, Belegkette, oder ein anderes Modul aus module-uebersicht.md).
 
 Offener Nebenpunkt (nicht code-, sondern server-seitig): `docker compose`-Warnung "Found orphan containers (erp-v2-traefik-1)" auf dem Server. Traefik läuft laut Architektur-Entscheidung bewusst in einem separaten `infra-compose.yml`, nicht in diesem `docker-compose.yml` - die Warnung kommt vermutlich, weil beide Compose-Files ohne `-p` im selben Verzeichnis (`/opt/erp-v2`) laufen und dadurch denselben Projektnamen "erp-v2" erhalten. **NICHT** `--remove-orphans` verwenden, ohne vorher zu bestätigen, dass der Traefik-Container wirklich der aktive Reverse-Proxy ist (sonst Gefahr, die HTTPS-Terminierung fuer die ganze Seite zu killen). Sauberer Fix (spaeter, im Wartungsfenster): Infra-Stack mit eigenem Projektnamen starten (`docker compose -p infra -f infra-compose.yml up -d`). Noch ungeklaert, ob `test.wbyt.app` gerade normal ueber HTTPS erreichbar ist (User-Bestaetigung steht aus).
 
@@ -123,13 +128,15 @@ Alle bisherigen Roadmap-Punkte sind CODE-fertig (siehe "Offene Baustelle" oben f
 5. ~~Stückliste (BOM), mehrstufig~~ — erledigt (Commits `5cf5383`/`83bb523`), Deploy steht aus. Entschieden VOR der Umsetzung (nicht geraten): feste Menge (kein Verschnitt-Feld), nur echte Artikel-Positionen (keine Textzeilen), Baumansicht + druckbare Strukturstückliste von Anfang an. ERP v1 hat die "Strukturstückliste" selbst nie fertig gebaut - Datenmodell hier komplett neu entworfen.
 6. ~~Log-Tab: Benutzer-UUID zu Namen aufloesen~~ — erledigt (Commit `c6ac11c`), Deploy steht aus. Bekannte, bewusst zurueckgestellte Luecke dabei entdeckt: `audit_log.changed_by` ist immer NULL (eigene Sektion oben)
 7. ~~Letzte Feldkatalog-Luecken (gewicht_kg, Masse, mindestbestand)~~ — erledigt (Commits `98031b1`/`999094e`), Deploy steht aus
+8. ~~Modul Stammdaten/System-Einstellungen (Firma/Steuersaetze/Nummernkreis-UI/Artikelnummern-Schema-UI)~~ — erledigt (Commits `1209dd3`/`657b161`/`d0829eb`), Deploy steht aus. Entschieden VOR der Umsetzung: erstmal 1 Firma (Singleton bleibt, kein `firma_id`-Umbau)
+9. ~~Reset-/Seed-Skripte fuer Testdaten~~ — erledigt (Commit `a724a5d`), noch nicht auf dem Server ausgefuehrt. Entschieden VOR der Umsetzung: nur Bewegungsdaten zuruecksetzen, Seed ueber echte Services statt SQL-Insert
 
-**Keine weiteren Roadmap-Punkte offen** - naechste Prioritaet muss neu mit dem User geklaert werden (z.B. Materialbedarfsplanung/Fertigungsauftraege als natuerlicher Folgeschritt der Stückliste, siehe module-uebersicht.md "Fertigung & Anlagenbau").
+**Keine weiteren Roadmap-Punkte offen** - naechste Prioritaet muss neu mit dem User geklaert werden (z.B. Belegkette/Verkauf, Materialbedarfsplanung/Fertigungsauftraege als natuerlicher Folgeschritt der Stückliste, Projekt-/Auftragsverwaltung, oder eigene RBAC-Rollenzuteilung fuer den neuen modul_key `stammdaten` ausserhalb Owner/Administrator - siehe module-uebersicht.md).
 
 ## Beim Feldkatalog-Abgleich (07./08.08.2026) gefundene fehlende Artikel-Felder
 
-Laut `docs/feldkatalog.md` vorgesehen - Stand jetzt bis auf einen Punkt komplett abgearbeitet:
-- `steuersatz_id` (Pflicht laut Feldkatalog) — **einziger noch offener Punkt**, wartet auf Modul Stammdaten/System-Einstellungen (Steuersätze existieren als Konzept noch nicht)
+Laut `docs/feldkatalog.md` vorgesehen - **jetzt vollstaendig abgearbeitet**:
+- ~~`steuersatz_id`~~ — erledigt (Migration 0015, echte Pflicht-FK auf neue `steuersatz`-Tabelle, Migration 0014). War der letzte offene Punkt, wartete auf das Modul Stammdaten/System-Einstellungen (08.08.2026 umgesetzt)
 - ~~`gewicht_kg`, `laenge_mm`/`breite_mm`/`hoehe_mm`~~ — erledigt (Migration 0013)
 - ~~`mindestbestand`~~ — erledigt (Migration 0013)
 - ~~`bomfaehig`~~ — erledigt (Migration 0011)
