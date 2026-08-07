@@ -67,6 +67,12 @@ Deshalb gilt ab jetzt zwingend, nicht optional:
      "starte den Service neu" als vage Beschreibung.
 - Diese Regel gilt für jede Übergabe, nicht nur für die ersten male – dauerhaft in die
   Arbeitsweise übernehmen, nicht nur für diesen einen Auth-Service-Commit.
+- Server-Befehle IMMER in Code-Bloecken mit expliziter Sprachangabe ```bash```
+  ausgeben (nicht nur ``` ohne Sprache) – sonst fehlt in der Chat-Oberflaeche des
+  Nutzers die Syntax-Highlighting-Faerbung. Ist dem Nutzer schon mehrfach nach
+  Kontext-Kompression negativ aufgefallen (08.08.2026) – Detail geht nach
+  Kompression offenbar leicht verloren, deshalb hier explizit und dauerhaft
+  festgehalten.
 
 ## 2. Commit-Message-Format (Conventional Commits)
 
