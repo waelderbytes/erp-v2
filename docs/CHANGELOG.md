@@ -10,6 +10,17 @@ im vollen Sinn.
 
 ## [Unreleased]
 
+### Letzte Feldkatalog-Lücken bei Artikel nachgezogen (08.08.2026)
+- Migration 0013: `gewicht_kg`, `laenge_mm`/`breite_mm`/`hoehe_mm`,
+  `mindestbestand` - alle optional (Standard-Erweiterungsfelder laut
+  feldkatalog.md, kein Pflichtfeld wie `steuersatz_id`)
+- `mindestbestand` bewusst ohne Service-seitige Erzwingung - reine
+  Zusatzinfo, im Frontend nur sichtbar wenn "Bestandsgeführt" aktiv ist
+- Frontend: Masse als 4er-Grid im Stammdaten-Tab, Log-Tab-Feldlabels ergänzt
+- Verifiziert lokal: erp-service (`tsc --noEmit`, `nest build`), web
+  (`tsc --noEmit`, `vite build`) - alle fehlerfrei. Commits `98031b1`
+  (Backend), `999094e` (Frontend), gepusht
+
 ### Fix: Log-Tab zeigte UUID statt Benutzername (08.08.2026)
 - Nutzer-Report: "Benutzer nicht aufgeschlüsselt, manchmal -"
 - Ursache 1 (behoben): Lagerbuchungen zeigten die rohe `gebuchtVon`-UUID -

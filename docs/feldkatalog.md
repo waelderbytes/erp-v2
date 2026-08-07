@@ -48,11 +48,11 @@ Getroffene Entscheidung: **Hybrid-Modell**.
 
 | Feld | Typ | Beschreibung |
 |---|---|---|
-| `gewicht_kg` | numeric | v. a. Handelsware/Fertigungsartikel |
-| `laenge_mm` / `breite_mm` / `hoehe_mm` | numeric | Abmessungen |
+| `gewicht_kg` | numeric | ✅ umgesetzt (Migration 0013, 08.08.2026) - v. a. Handelsware/Fertigungsartikel |
+| `laenge_mm` / `breite_mm` / `hoehe_mm` | numeric | ✅ umgesetzt (Migration 0013, 08.08.2026) - Abmessungen |
 | `hersteller` | string | Herstellername, falls abweichend vom Lieferanten |
 | `hersteller_artikelnummer` | string | |
-| `mindestbestand` | numeric | nur relevant wenn `bestandsgefuehrt = true` |
+| `mindestbestand` | numeric | ✅ umgesetzt (Migration 0013, 08.08.2026) - nur relevant wenn `bestandsgefuehrt = true` |
 | `bomfaehig` | boolean | ✅ umgesetzt (Migration 0011, 08.08.2026) - true nur bei `fertigungsartikel`; Datenmodell-Vorbereitung für spätere Stücklisten-Funktionalität (siehe `module-uebersicht.md` Abschnitt 1) |
 
 ### 1.3 Beziehungstabellen (referenziert, nicht Teil des Artikel-Kerns)
