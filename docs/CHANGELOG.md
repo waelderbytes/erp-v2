@@ -10,6 +10,42 @@ im vollen Sinn.
 
 ## [Unreleased]
 
+### Kunden-/Lieferantenstamm live verifiziert (08.08.2026)
+- Neue Endpoints: `POST /kunden`, `GET /kunden`, `GET /kunden/:id`, `POST
+  /kunden/:id/bewertungen`, `GET /kunden/:id/bewertungen`, `POST /lieferanten`, `GET
+  /lieferanten`, `GET /lieferanten/:id`
+- Neue Endpoints Artikel-Lieferant-Zuordnung (fehlten bisher komplett): `POST
+  /artikel/:id/lieferant` (Zuordnung anlegen), `GET /artikel/:id/lieferant` (Liste),
+  `POST /artikel/:id/lieferant/:zuordnungId/favorit` (bestehend, jetzt sinnvoll nutzbar)
+- Migration 0002_kunden_lieferantenstamm: kunde/kunde_adresse/kunde_kontakt/
+  bewertungskriterium (geseedet)/kunde_bewertung/lieferant/lieferant_adresse/
+  lieferant_kontakt, `artikel_lieferant.lieferant_id` als echter FK
+- Migration 0003_artikel_lieferant_unique: UNIQUE(artikel_id, lieferant_id) auf
+  `artikel_lieferant` (fehlte bisher, ermoeglichte Duplikate), inkl. Bereinigung
+  vorhandener Duplikate vor Anlage der Constraint
+- Auf dem Server end-to-end getestet: Kunde mit Adresse anlegen (Nummernkreis
+  vergibt Kundennummer korrekt), Lieferant anlegen (Lieferantennummer korrekt),
+  Artikel-Lieferant-Zuordnung anlegen, als Favorit setzen - per direkter DB-Abfrage
+  bestaetigt
+- Bug gefunden + behoben: Migrations-Glob in `data-source.ts` matchte nur `*.ts`,
+  fand im kompilierten `dist/`-Ordner (nur `.js`-Dateien) daher keine einzige
+  Migration - `migration:run:prod` meldete faelschlich "No migrations are pending",
+  obwohl Migration 0002 nie angewendet war. Fix: Glob auf `*.{ts,js}` erweitert
+  (auth-service + erp-service)
+- Bug gefunden + behoben: fehlendes `@JoinColumn` auf mehreren `@ManyToOne`-Relationen
+  (`artikel_lieferant`, `kunde_adresse`, `kunde_kontakt`, `kunde_bewertung`,
+  `lieferant_adresse`, `lieferant_kontakt`, `artikelkategorie_zuordnung`) fuehrte zu
+  `QueryFailedError: column "artikelId" of relation "artikel_lieferant" does not
+  exist` - TypeORM legt ohne explizites `@JoinColumn` eine zusaetzliche implizite
+  Join-Spalte an (camelCase-Namensschema), die nie migriert wurde. Kunde/Lieferant-
+  Anlegen war davon nicht betroffen, weil dort ueber kaskadierendes Speichern
+  (Relation als Objekt) statt ueber direktes Setzen des Skalar-FKs gearbeitet wurde -
+  `kunde_bewertung.bewerten()` haette denselben Fehler gehabt, war nur noch nicht
+  getestet, daher proaktiv mitgefixt
+- `docs/Regeln.md`/`CLAUDE.md`: Abschnitt 0a (Umgang mit GitHub-PAT ueber Sessions
+  hinweg, Nutzerentscheidung) und Ergaenzung zu Abschnitt 1a (Server-Befehle immer in
+  Code-Bloecken mit Sprachangabe ```bash``` fuer korrekte Syntax-Highlighting)
+
 ### Added (07.08.2026)
 
 ### Added (08.08.2026) - Artikelstamm (erstes Fachmodul)
