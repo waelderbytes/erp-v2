@@ -6,7 +6,7 @@ Diese Zusammenfassung ist für einen neuen Claude-Chat gedacht (Geräte-/Session
 
 Multi-Tenant-ERP-System "WälderBytes ERP V2", von Grund auf neu gebaut (nicht die alte "waelderbytes-suite" v1). Ziel: vollumfängliches ERP mit Auftrags-/Projektverwaltung und Zeiterfassung, als Webapp, self-hosted oder als Abo buchbar, modular erweiterbar, DSGVO-konform.
 
-**Repo:** `https://github.com/waelderbytes/erp-v2.git` (aktueller Stand HEAD: Commit `9a079d4`)
+**Repo:** `https://github.com/waelderbytes/erp-v2.git` (aktueller Stand HEAD: Commit `8df7afa`)
 **Server:** Hetzner CPX22, `test.wbyt.app`, Deploy via Docker Compose + Traefik
 **PAT/Zugangsdaten:** liegen in der Cowork-Outputs-Datei `zugangsdaten-NICHT-COMMITTEN.md` — NIE ins Repo committen (Regeln.md Abschnitt 0a)
 
@@ -28,16 +28,27 @@ Multi-Tenant-ERP-System "WälderBytes ERP V2", von Grund auf neu gebaut (nicht d
 7. Backend: Mehrsprachigkeit (Kurztext/Langtext) + interne Notiz bei Artikel — Pattern 1:1 aus ERP v1 übernommen (siehe unten)
 8. Frontend: Artikel Anlegen+Bearbeiten zu einem mehrstufigen Assistenten verschmolzen (`/artikel/neu` und `/artikel/:id` nutzen dieselbe Komponente)
 9. Bugfix "Artikel neu → Lädt…" (fehlender `:id`-Param auf Route) — deployt + bestätigt
-10. Artikel-Wizard-UX: alle Tabs von Anfang an sichtbar (disabled bis Stammdaten gespeichert) + Weiter/Zurück-Fuehrung mit Auto-Sprung nach dem Speichern — deployt
+10. Artikel-Wizard-UX: alle Tabs von Anfang an sichtbar (disabled bis Stammdaten gespeichert) + Weiter/Zurück-Fuehrung mit Auto-Sprung nach dem Speichern (überspringt deaktivierte Tabs) — deployt
 11. Echtes Einheiten-Modul (`GET/POST/DELETE /einheiten`, `artikel.einheit_id` als FK statt Freitext) + generisches `SearchCreateDropdown` (tippen filtert, "+ anlegen") + Kurztext-Vorschlaege aus vorhandenen Artikeln — deployt + Migrationslauf bestätigt erfolgreich (08.08.2026, nach Fix für fehlende Einheit-Entity in `data-source.ts`, siehe Vorfall 3 unten)
+12. Artikel Log-Tab (`GET /artikel/:id/log`, kombiniert Audit-Trail + Lagerbuchungen) + Bestand-Tab jetzt immer sichtbar (nur ausgegraut wenn nicht bestandsgeführt) — gepusht (Commits `3fc7d1f`/`5004a24`), **Deploy/Migration auf dem Server noch nicht bestätigt**
+13. PWA-Installierbarkeit (`vite-plugin-pwa` aktiviert, generierte Platzhalter-Icons) — gepusht (Commit `adfafe4`), **Deploy auf dem Server noch nicht bestätigt**
+14. `artikel.bomfaehig`-Flag nachgezogen (Migration 0011, Vorbereitung Stückliste/BOM) — gepusht (Commit `2bff571`), **Deploy/Migration auf dem Server noch nicht bestätigt**
 
 ## Offene Baustelle gerade eben
 
-Keine akute Baustelle - alle drei zuletzt behobenen Bugs (Sprache löschen 409/204-Fix, "Artikel neu → Lädt…"-Routing-Fix, fehlende Einheit-Entity in data-source.ts) sind deployt und vom User bestätigt (08.08.2026, "lief durch" nach dem Migrationslauf). Naechster Schritt: Roadmap unten, Punkt 1 (Log-Tab).
+Roadmap-Punkte 1-3 (Log-Tab, Bestand-Tab-immer-sichtbar, PWA) plus der vorgezogene `bomfaehig`-Fix sind alle CODE-fertig, lokal verifiziert und gepusht (Commits `3fc7d1f`, `5004a24`, `adfafe4`, `2bff571`) - **aber noch NICHT vom User auf dem Server deployt/bestätigt**. Deploy-Befehl (MIT Migrations-Schritt, da `bomfaehig` eine Schema-Aenderung ist):
 
-Offener Nebenpunkt (nicht code-, sondern server-seitig): `docker compose`-Warnung "Found orphan containers (erp-v2-traefik-1)" auf dem Server. Traefik läuft laut Architektur-Entscheidung bewusst in einem separaten `infra-compose.yml`, nicht in diesem `docker-compose.yml` - die Warnung kommt vermutlich, weil beide Compose-Files ohne `-p` im selben Verzeichnis (`/opt/erp-v2`) laufen und dadurch denselben Projektnamen "erp-v2" erhalten. **NICHT** `--remove-orphans` verwenden, ohne vorher zu bestätigen, dass der Traefik-Container wirklich der aktive Reverse-Proxy ist (sonst Gefahr, die HTTPS-Terminierung fuer die ganze Seite zu killen). Sauberer Fix (spaeter, im Wartungsfenster): Infra-Stack mit eigenem Projektnamen starten (`docker compose -p infra -f infra-compose.yml up -d`).
+```bash
+cd /opt/erp-v2
+git pull
+docker compose build erp-service web
+docker compose up -d erp-service web
+docker compose exec erp-service npm run migration:run:prod
+```
 
-(Deploy-Service-Name ggf. anpassen, falls das Frontend in docker-compose.yml anders heisst.)
+Naechster Roadmap-Schritt danach: Stückliste (BOM, Punkt 4) - das ist eine groessere Datenmodell-Entscheidung (mehrstufige Struktur, v1 hat das nie fertig gebaut), sollte NICHT einfach durchimplementiert werden, sondern der Ansatz erst mit dem User abgestimmt werden (siehe Nutzerpräferenz: keine Annahmen treffen).
+
+Offener Nebenpunkt (nicht code-, sondern server-seitig): `docker compose`-Warnung "Found orphan containers (erp-v2-traefik-1)" auf dem Server. Traefik läuft laut Architektur-Entscheidung bewusst in einem separaten `infra-compose.yml`, nicht in diesem `docker-compose.yml` - die Warnung kommt vermutlich, weil beide Compose-Files ohne `-p` im selben Verzeichnis (`/opt/erp-v2`) laufen und dadurch denselben Projektnamen "erp-v2" erhalten. **NICHT** `--remove-orphans` verwenden, ohne vorher zu bestätigen, dass der Traefik-Container wirklich der aktive Reverse-Proxy ist (sonst Gefahr, die HTTPS-Terminierung fuer die ganze Seite zu killen). Sauberer Fix (spaeter, im Wartungsfenster): Infra-Stack mit eigenem Projektnamen starten (`docker compose -p infra -f infra-compose.yml up -d`). Noch ungeklaert, ob `test.wbyt.app` gerade normal ueber HTTPS erreichbar ist (User-Bestaetigung steht aus).
 
 ## Drei kürzlich behobene Produktionsvorfälle (zur Erinnerung an häufige Fehlerklasse)
 
@@ -73,18 +84,19 @@ Offener Nebenpunkt (nicht code-, sondern server-seitig): `docker compose`-Warnun
 
 ## Nächste offene Aufgaben (Roadmap, nach aktueller Priorität, Stand 08.08.2026)
 
-1. Artikel: Log-Tab (Audit-Trail + Lagerbuchungen mit Buchungsgrund, Filter "nur Buchungen") — Audit-Log-Tabelle existiert bereits generisch per DB-Trigger, aber noch kein Query-Endpoint dafür
-2. Artikel: Bestand-Tab soll IMMER sichtbar sein, nur ausgegraut/deaktiviert wenn nicht bestandsgeführt (aktuell wird der Tab komplett ausgeblendet — das soll geändert werden)
-3. PWA-Installierbarkeit mit generiertem Platzhalter-Icon (User hat sich explizit für Platzhalter statt eigenem Logo entschieden)
-4. Stückliste (BOM): User will die volle mehrstufige Variante (nicht die von mir empfohlene einfachere). Wichtig: ERP v1 hat die "Strukturstückliste" (druckbare mehrstufige Ansicht) selbst NIE fertig gebaut (nur Platzhalter-Screen) — kann für diesen Teil also nicht 1:1 aus v1 übernommen werden, muss neu entworfen werden. Das flache v1-`stueckliste`-Datenmodell kann aber als Ausgangspunkt dienen. **Voraussetzung:** `artikel.bomfaehig`-Flag fehlt noch (siehe unten), muss vor BOM-Start nachgezogen werden.
+1. ~~Artikel: Log-Tab~~ — erledigt (Commits `3fc7d1f`/`5004a24`), Deploy steht aus
+2. ~~Artikel: Bestand-Tab immer sichtbar~~ — erledigt (Commit `5004a24`), Deploy steht aus
+3. ~~PWA-Installierbarkeit~~ — erledigt (Commit `adfafe4`), Deploy steht aus
+4. ~~`bomfaehig`-Flag nachgezogen~~ — erledigt (Commit `2bff571`), Deploy steht aus
+5. **Stückliste (BOM)** — naechster Schritt, aber Datenmodell/Ansatz MUSS erst mit dem User abgestimmt werden, bevor Code geschrieben wird: User will die volle mehrstufige Variante (nicht die von mir empfohlene einfachere). ERP v1 hat die "Strukturstückliste" (druckbare mehrstufige Ansicht) selbst NIE fertig gebaut (nur Platzhalter-Screen) — kann also nicht 1:1 aus v1 übernommen werden, muss neu entworfen werden. Das flache v1-`stueckliste`-Datenmodell kann als Ausgangspunkt dienen (Recherche in v1 vor Design-Entscheidung: `services/erp-service` nach "stueckliste" durchsuchen). Voraussetzung `bomfaehig` ist jetzt erfuellt.
 
 ## Beim Feldkatalog-Abgleich (07./08.08.2026) gefundene fehlende Artikel-Felder
 
 Laut `docs/feldkatalog.md` vorgesehen, aber in der Entity/DTO noch nicht vorhanden:
 - `steuersatz_id` (Pflicht laut Feldkatalog) — wartet auf Modul Stammdaten/System-Einstellungen (Steuersätze existieren als Konzept noch nicht)
-- `bomfaehig` (Boolean, true nur bei `fertigungsartikel`) — **blockiert Punkt 4 oben (BOM)**, sollte vorher nachgezogen werden
 - `gewicht_kg`, `laenge_mm`/`breite_mm`/`hoehe_mm` (Standard-Erweiterungsfelder, optional)
 - `mindestbestand` (nur relevant wenn `bestandsgefuehrt = true`, bereits separat als offener Punkt bei Lagerverwaltung vermerkt)
+- ~~`bomfaehig`~~ — erledigt (Migration 0011, siehe oben)
 
 ## Sandbox-Hinweis (nur relevant, falls wieder mit Bash/Sandbox gearbeitet wird)
 
