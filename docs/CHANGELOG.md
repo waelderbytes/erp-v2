@@ -10,6 +10,19 @@ im vollen Sinn.
 
 ## [Unreleased]
 
+### bomfaehig-Flag nachgezogen (08.08.2026)
+- Feldkatalog-Abgleich hatte eine Luecke aufgedeckt: `bomfaehig` war laut
+  Doku "bereits vorgesehen", existierte aber nicht in der Entity - vorab
+  nachgezogen, da der naechste Roadmap-Punkt (Stueckliste/BOM) darauf
+  aufbaut
+- Migration 0011: `artikel.bomfaehig BOOLEAN NOT NULL DEFAULT false`, nur
+  bei `artikelart = 'fertigungsartikel'` wirksam (Service-seitig erzwungen,
+  gleiches Muster wie `bestandsgefuehrt`)
+- Frontend: Checkbox "Stücklistenfähig" im Stammdaten-Tab
+- Verifiziert lokal: erp-service (`tsc --noEmit`, `nest build`), web
+  (`tsc --noEmit`, `vite build`) - alle fehlerfrei. Commit `2bff571`,
+  gepusht
+
 ### PWA-Installierbarkeit (08.08.2026)
 - `vite-plugin-pwa` aktiviert (war als Dependency vorhanden, aber noch nicht
   verdrahtet) - Manifest + Service Worker (nur App-Shell precached, bewusst
