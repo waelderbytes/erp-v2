@@ -10,6 +10,16 @@ im vollen Sinn.
 
 ## [Unreleased]
 
+### PWA-Installierbarkeit (08.08.2026)
+- `vite-plugin-pwa` aktiviert (war als Dependency vorhanden, aber noch nicht
+  verdrahtet) - Manifest + Service Worker (nur App-Shell precached, bewusst
+  kein Runtime-Caching von API-Antworten)
+- Platzhalter-Icons generiert (Nutzerentscheidung: kein eigenes Logo),
+  Farbe aus `--primary`: icon-192/512/512-maskable, apple-touch-icon,
+  favicon.ico
+- Verifiziert lokal: `tsc --noEmit`, `vite build` (fehlerfrei, SW + Manifest
+  werden erzeugt). Commit `adfafe4`, gepusht
+
 ### Artikel Log-Tab + Bestand-Tab immer sichtbar (08.08.2026)
 - Backend: `GET /artikel/:id/log` (neuer `ArtikelLogService`) liefert
   Audit-Trail (`audit_log`, roh per DataSource-Query gelesen statt eigener
