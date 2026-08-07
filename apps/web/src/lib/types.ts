@@ -15,8 +15,17 @@ export interface Artikel {
   eanGtin: string | null;
   hersteller: string | null;
   herstellerArtikelnummer: string | null;
+  interneNotiz: string | null;
   aktiv: boolean;
   bestandsgefuehrt: boolean;
+}
+
+export interface ArtikelUebersetzung {
+  id: string;
+  artikelId: string;
+  sprache: string;
+  kurztext: string | null;
+  langtext: string | null;
 }
 
 export interface KundeAdresse {
@@ -34,6 +43,9 @@ export interface Kunde {
   firmenname: string | null;
   vorname: string | null;
   nachname: string | null;
+  // Steuert spaeter (Belegkette, Phase 3) welche Artikel-Uebersetzung auf
+  // Belegen an diesen Kunden gezogen wird, siehe ArtikelUebersetzung. Default 'de'.
+  sprache: string;
   aktiv: boolean;
   adressen?: KundeAdresse[];
 }

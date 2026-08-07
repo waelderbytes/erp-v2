@@ -1,10 +1,11 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/auth';
 import { Berechtigung, RbacGuard } from '../../common/rbac';
 import { ArtikelService } from './artikel.service';
 import { ArtikelAnlegenDto } from './dto/artikel-anlegen.dto';
 import { ArtikelLieferantZuordnenDto } from './dto/artikel-lieferant-zuordnen.dto';
 import { ArtikelAktualisierenDto } from './dto/artikel-aktualisieren.dto';
+import { ArtikelUebersetzungUpsertDto } from './dto/artikel-uebersetzung-upsert.dto';
 
 @Controller('artikel')
 @UseGuards(JwtAuthGuard, RbacGuard)
@@ -51,5 +52,27 @@ export class ArtikelController {
   @Berechtigung('artikelstamm', 'schreiben')
   favoritSetzen(@Param('id') id: string, @Param('zuordnungId') zuordnungId: string) {
     return this.artikelService.lieferantAlsFavoritSetzen(id, zuordnungId);
+  }
+
+  @Get(':id/uebersetzungen')
+  @Berechtigung('artikelstamm', 'lesen')
+  uebersetzungenListe(@Param('id') id: string) {
+    return this.artikelService.uebersetzungenListe(id);
+  }
+
+  @Put(':id/uebersetzungen/:sprache')
+  @Berechtigung('artikelstamm', 'schreiben')
+  uebersetzungUpsert(
+    @Param('id') id: string,
+    @Param('sprache') sprache: string,
+    @Body() dto: ArtikelUebersetzungUpsertDto,
+  ) {
+    return this.artikelService.uebersetzungUpsert(id, sprache, dto);
+  }
+
+  @Delete(':id/uebersetzungen/:sprache')
+  @Berechtigung('artikelstamm', 'schreiben')
+  uebersetzungLoeschen(@Param('id') id: string, @Param('sprache') sprache: string) {
+    return this.artikelService.uebersetzungLoeschen(id, sprache);
   }
 }

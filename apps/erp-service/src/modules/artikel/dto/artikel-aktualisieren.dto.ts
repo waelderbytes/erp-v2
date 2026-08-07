@@ -33,6 +33,10 @@ export class ArtikelAktualisierenDto {
   herstellerArtikelnummer?: string;
 
   @IsOptional()
+  @IsString()
+  interneNotiz?: string;
+
+  @IsOptional()
   @IsBoolean()
   bestandsgefuehrt?: boolean;
 

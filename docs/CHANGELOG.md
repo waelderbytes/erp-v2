@@ -10,6 +10,42 @@ im vollen Sinn.
 
 ## [Unreleased]
 
+### Mehrsprachigkeit Kurztext/Langtext + interne Notiz + Artikel-Assistent (07.08.2026)
+- Nutzerwunsch, Referenz ERP v1 (`waelderbytes-suite`, GitHub) auf Bitte
+  geklont und ausgewertet (Migration `0018_mehrsprachigkeit_interne_notiz.py`,
+  `ArtikelWizard.tsx`): Datenmodell und UI-Muster 1:1 uebernommen, da dort
+  bereits bewaehrt
+- Backend: Migration 0008 - `artikel.interne_notiz` (rein intern, erscheint
+  nie auf Belegen, bewusst einsprachig), neue Tabelle `artikel_uebersetzung`
+  (artikel_id, sprache, kurztext, langtext, UNIQUE(artikel_id, sprache),
+  Audit-Trigger). 'de' bleibt bewusst DIREKT auf `artikel.bezeichnung`/
+  `beschreibung` - die neue Tabelle haelt nur ZUSAETZLICHE Sprachen
+- Backend: neue Endpoints `GET/PUT/DELETE /artikel/:id/uebersetzungen(/:sprache)`,
+  PUT-Upsert keyed auf (artikelId, sprache aus der URL) statt eigener
+  Uebersetzungs-id (gleiches Muster wie v1). Sprache 'de' wird hier bewusst
+  mit 409 abgelehnt (dafuer die Basisfelder verwenden)
+- Backend: `kunde.sprache` existierte als Spalte bereits (Default 'de'), war
+  aber nicht im Anlegen-DTO nutzbar - ergaenzt. Bestimmt spaeter (Belegkette,
+  Phase 3, noch nicht gebaut) welche Artikel-Uebersetzung fuer einen Kunden
+  gezogen wird
+- Frontend: kein separater Anlegen-Dialog mehr fuer Artikel. Neue Route
+  `/artikel/neu` nutzt denselben Tab-Screen wie das Bearbeiten
+  (`ArtikelDetail.tsx`) - Tab "Stammdaten" speichert (POST beim ersten Mal,
+  danach PATCH), erst danach schalten sich Bestand/Preise/Lieferanten/
+  Sprachen frei (v1-Muster: "Speichere den Artikel zuerst..."). Nach dem
+  Anlegen automatischer Wechsel von `/artikel/neu` auf `/artikel/:id`
+  (`navigate(..., { replace: true })`), damit ein Reload nicht wieder im
+  Anlegen-Modus landet
+- Frontend: neuer Tab "Sprachen" - Sprachen-Tabs-UI (Klick auf Sprachcode,
+  "+ Sprache" zum Hinzufuegen, Kurztext/Langtext-Felder, Speichern/Entfernen
+  je Sprache), direkt nach dem UX-Muster aus v1s `UebersetzungenBlock`
+  nachgebaut
+- Frontend: "Interne Notiz" als eigenes Textfeld im Tab "Stammdaten"
+  (getrennt von "Langtext", das auf Belegen landen kann)
+- Frontend: Kunde-Anlegen-Dialog um Sprache-Feld ergaenzt (Default "de")
+- Verifiziert lokal: erp-service `tsc --noEmit` + `nest build`, web `tsc
+  --noEmit` + `vite build` (Bundle 361 KB / 111 KB gzip), alle fehlerfrei
+
 ### UI-Politur Warenwirtschaft, Fokus Artikel (07.08.2026)
 - Backend: `PATCH /artikel/:id` (neuer Endpoint, bisher konnte ein Artikel nach
   dem Anlegen gar nicht mehr geaendert werden) - `ArtikelAktualisierenDto`,

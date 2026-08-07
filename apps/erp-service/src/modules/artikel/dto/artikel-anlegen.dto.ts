@@ -40,4 +40,10 @@ export class ArtikelAnlegenDto {
   @IsOptional()
   @IsString()
   herstellerArtikelnummer?: string;
+
+  // Rein intern, siehe Migration 0008 / artikel.entity.ts Kommentar. Bewusst
+  // einsprachig - keine Uebersetzung noetig.
+  @IsOptional()
+  @IsString()
+  interneNotiz?: string;
 }

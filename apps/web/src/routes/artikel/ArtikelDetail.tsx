@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Star } from 'lucide-react';
+import { ArrowLeft, Star, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,21 +9,32 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { api, ApiError } from '@/lib/api';
-import { Artikel, ArtikelLieferant, Artikelpreis, Kunde, Lager, Lagerbestand, Lieferant } from '@/lib/types';
+import { cn } from '@/lib/utils';
+import {
+  Artikel,
+  ArtikelLieferant,
+  ArtikelUebersetzung,
+  Artikelart,
+  Artikelpreis,
+  Kunde,
+  Lager,
+  Lagerbestand,
+  Lieferant,
+} from '@/lib/types';
 
-// Detailansicht statt der frueheren getrennten "Bestand"/"Preise"-Seiten:
-// Buchungen/Preise/Lieferanten-Zuordnung direkt am Artikel, wie vom Nutzer nach
-// der ersten UI-Runde gewuenscht (siehe docs/CHANGELOG.md). Die eigenstaendigen
-// Lager-/Preise-Uebersichtsseiten bleiben zusaetzlich bestehen (dort geht es um
-// die modulweite Sicht, hier um die artikelbezogene).
+// Ein Screen fuer Anlegen UND Bearbeiten (Route "/artikel/neu" bzw. "/artikel/:id"),
+// nach dem Muster aus ERP v1 (waelderbytes-suite, ArtikelWizard.tsx): der erste
+// Tab "Stammdaten" speichert den Artikel, danach schalten sich die weiteren Tabs
+// (Bestand/Preise/Lieferanten/Sprachen) frei - kein separater Anlegen-Dialog mehr.
 export function ArtikelDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const istNeu = id === 'neu';
   const [artikel, setArtikel] = useState<Artikel | null>(null);
   const [ladeFehler, setLadeFehler] = useState<string | null>(null);
 
   async function laden() {
-    if (!id) return;
+    if (!id || istNeu) return;
     try {
       setArtikel(await api.get<Artikel>(`/artikel/${id}`));
     } catch (err) {
@@ -39,7 +50,7 @@ export function ArtikelDetail() {
   if (ladeFehler) {
     return <p className="text-sm text-destructive">{ladeFehler}</p>;
   }
-  if (!artikel || !id) {
+  if (!istNeu && !artikel) {
     return <p className="text-sm text-muted-foreground">Lädt…</p>;
   }
 
@@ -50,47 +61,74 @@ export function ArtikelDetail() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <div className="font-mono text-xs text-muted-foreground">{artikel.artikelnummer}</div>
-          <h1 className="text-xl font-semibold">{artikel.bezeichnung}</h1>
+          {artikel && <div className="font-mono text-xs text-muted-foreground">{artikel.artikelnummer}</div>}
+          <h1 className="text-xl font-semibold">{istNeu ? 'Neuer Artikel' : artikel!.bezeichnung}</h1>
         </div>
       </div>
 
       <Tabs defaultValue="stammdaten">
         <TabsList>
           <TabsTrigger value="stammdaten">Stammdaten</TabsTrigger>
-          {artikel.bestandsgefuehrt && <TabsTrigger value="bestand">Bestand</TabsTrigger>}
-          <TabsTrigger value="preise">Preise</TabsTrigger>
-          <TabsTrigger value="lieferanten">Lieferanten</TabsTrigger>
+          {artikel?.bestandsgefuehrt && <TabsTrigger value="bestand">Bestand</TabsTrigger>}
+          {artikel && <TabsTrigger value="preise">Preise</TabsTrigger>}
+          {artikel && <TabsTrigger value="lieferanten">Lieferanten</TabsTrigger>}
+          {artikel && <TabsTrigger value="sprachen">Sprachen</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="stammdaten">
-          <StammdatenTab artikel={artikel} onGeaendert={setArtikel} />
+          <StammdatenTab
+            artikel={artikel}
+            onGespeichert={(a, warNeu) => {
+              setArtikel(a);
+              // Nach dem ERSTEN Speichern (Anlegen) auf die echte URL wechseln,
+              // damit ein Reload nicht wieder im "neu"-Modus landet und die
+              // anderen Tabs (die eine echte artikelId brauchen) sofort nutzbar sind.
+              if (warNeu) navigate(`/artikel/${a.id}`, { replace: true });
+            }}
+          />
         </TabsContent>
-        {artikel.bestandsgefuehrt && (
+        {artikel?.bestandsgefuehrt && (
           <TabsContent value="bestand">
-            <BestandTab artikelId={id} />
+            <BestandTab artikelId={artikel.id} />
           </TabsContent>
         )}
-        <TabsContent value="preise">
-          <PreiseTab artikelId={id} />
-        </TabsContent>
-        <TabsContent value="lieferanten">
-          <LieferantenTab artikelId={id} />
-        </TabsContent>
+        {artikel && (
+          <TabsContent value="preise">
+            <PreiseTab artikelId={artikel.id} />
+          </TabsContent>
+        )}
+        {artikel && (
+          <TabsContent value="lieferanten">
+            <LieferantenTab artikelId={artikel.id} />
+          </TabsContent>
+        )}
+        {artikel && (
+          <TabsContent value="sprachen">
+            <SprachenTab artikelId={artikel.id} />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
 }
 
-function StammdatenTab({ artikel, onGeaendert }: { artikel: Artikel; onGeaendert: (a: Artikel) => void }) {
-  const [bezeichnung, setBezeichnung] = useState(artikel.bezeichnung);
-  const [beschreibung, setBeschreibung] = useState(artikel.beschreibung ?? '');
-  const [einheit, setEinheit] = useState(artikel.einheit ?? '');
-  const [eanGtin, setEanGtin] = useState(artikel.eanGtin ?? '');
-  const [hersteller, setHersteller] = useState(artikel.hersteller ?? '');
-  const [herstellerArtikelnummer, setHerstellerArtikelnummer] = useState(artikel.herstellerArtikelnummer ?? '');
-  const [bestandsgefuehrt, setBestandsgefuehrt] = useState(artikel.bestandsgefuehrt);
-  const [aktiv, setAktiv] = useState(artikel.aktiv);
+function StammdatenTab({
+  artikel,
+  onGespeichert,
+}: {
+  artikel: Artikel | null;
+  onGespeichert: (a: Artikel, warNeu: boolean) => void;
+}) {
+  const [artikelart, setArtikelart] = useState<Artikelart>(artikel?.artikelart ?? 'handelsware');
+  const [bezeichnung, setBezeichnung] = useState(artikel?.bezeichnung ?? '');
+  const [beschreibung, setBeschreibung] = useState(artikel?.beschreibung ?? '');
+  const [einheit, setEinheit] = useState(artikel?.einheit ?? '');
+  const [eanGtin, setEanGtin] = useState(artikel?.eanGtin ?? '');
+  const [hersteller, setHersteller] = useState(artikel?.hersteller ?? '');
+  const [herstellerArtikelnummer, setHerstellerArtikelnummer] = useState(artikel?.herstellerArtikelnummer ?? '');
+  const [interneNotiz, setInterneNotiz] = useState(artikel?.interneNotiz ?? '');
+  const [bestandsgefuehrt, setBestandsgefuehrt] = useState(artikel?.bestandsgefuehrt ?? false);
+  const [aktiv, setAktiv] = useState(artikel?.aktiv ?? true);
   const [fehler, setFehler] = useState<string | null>(null);
   const [erfolg, setErfolg] = useState(false);
   const [speichernd, setSpeichernd] = useState(false);
@@ -101,17 +139,33 @@ function StammdatenTab({ artikel, onGeaendert }: { artikel: Artikel; onGeaendert
     setErfolg(false);
     setSpeichernd(true);
     try {
-      const aktualisiert = await api.patch<Artikel>(`/artikel/${artikel.id}`, {
-        bezeichnung,
-        beschreibung: beschreibung || undefined,
-        einheit: einheit || undefined,
-        eanGtin: eanGtin || undefined,
-        hersteller: hersteller || undefined,
-        herstellerArtikelnummer: herstellerArtikelnummer || undefined,
-        bestandsgefuehrt,
-        aktiv,
-      });
-      onGeaendert(aktualisiert);
+      if (!artikel) {
+        const neuer = await api.post<Artikel>('/artikel', {
+          artikelart,
+          bezeichnung,
+          beschreibung: beschreibung || undefined,
+          einheit: einheit || undefined,
+          eanGtin: eanGtin || undefined,
+          bestandsgefuehrt: artikelart === 'dienstleistung' ? undefined : bestandsgefuehrt,
+          hersteller: hersteller || undefined,
+          herstellerArtikelnummer: herstellerArtikelnummer || undefined,
+          interneNotiz: interneNotiz || undefined,
+        });
+        onGespeichert(neuer, true);
+      } else {
+        const aktualisiert = await api.patch<Artikel>(`/artikel/${artikel.id}`, {
+          bezeichnung,
+          beschreibung: beschreibung || undefined,
+          einheit: einheit || undefined,
+          eanGtin: eanGtin || undefined,
+          hersteller: hersteller || undefined,
+          herstellerArtikelnummer: herstellerArtikelnummer || undefined,
+          interneNotiz: interneNotiz || undefined,
+          bestandsgefuehrt,
+          aktiv,
+        });
+        onGespeichert(aktualisiert, false);
+      }
       setErfolg(true);
     } catch (err) {
       setFehler(err instanceof ApiError ? err.message : 'Speichern fehlgeschlagen.');
@@ -124,12 +178,29 @@ function StammdatenTab({ artikel, onGeaendert }: { artikel: Artikel; onGeaendert
     <Card className="max-w-xl">
       <CardContent className="pt-6">
         <form onSubmit={speichern} className="space-y-4">
+          {!artikel && (
+            <div className="space-y-1.5">
+              <Label htmlFor="artikelart">Artikelart</Label>
+              <Select value={artikelart} onValueChange={(v) => setArtikelart(v as Artikelart)}>
+                <SelectTrigger id="artikelart">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="handelsware">Handelsware</SelectItem>
+                  <SelectItem value="dienstleistung">Dienstleistung</SelectItem>
+                  <SelectItem value="fertigungsartikel">Fertigungsartikel</SelectItem>
+                </SelectContent>
+              </Select>
+              {/* Nach dem Anlegen nicht mehr aenderbar - siehe
+                  ArtikelAktualisierenDto-Kommentar im Backend. */}
+            </div>
+          )}
           <div className="space-y-1.5">
-            <Label htmlFor="bezeichnung">Bezeichnung</Label>
-            <Input id="bezeichnung" value={bezeichnung} onChange={(e) => setBezeichnung(e.target.value)} required />
+            <Label htmlFor="bezeichnung">Kurztext (Bezeichnung, Deutsch)</Label>
+            <Input id="bezeichnung" value={bezeichnung} onChange={(e) => setBezeichnung(e.target.value)} required autoFocus />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="beschreibung">Beschreibung</Label>
+            <Label htmlFor="beschreibung">Langtext (Beschreibung, Deutsch)</Label>
             <textarea
               id="beschreibung"
               value={beschreibung}
@@ -137,17 +208,26 @@ function StammdatenTab({ artikel, onGeaendert }: { artikel: Artikel; onGeaendert
               rows={3}
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
             />
+            <p className="text-xs text-muted-foreground">
+              Weitere Sprachen für Kurz-/Langtext lassen sich nach dem Speichern im Tab „Sprachen“ hinterlegen.
+            </p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="einheit">Einheit</Label>
-              <Input id="einheit" value={einheit} onChange={(e) => setEinheit(e.target.value)} />
+              <Input id="einheit" placeholder="z. B. Stk, kg, m" value={einheit} onChange={(e) => setEinheit(e.target.value)} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="eanGtin">EAN/GTIN</Label>
               <Input id="eanGtin" value={eanGtin} onChange={(e) => setEanGtin(e.target.value)} />
             </div>
           </div>
+          {artikelart !== 'dienstleistung' && (
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={bestandsgefuehrt} onChange={(e) => setBestandsgefuehrt(e.target.checked)} />
+              Bestandsgeführt
+            </label>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="hersteller">Hersteller</Label>
@@ -162,20 +242,27 @@ function StammdatenTab({ artikel, onGeaendert }: { artikel: Artikel; onGeaendert
               />
             </div>
           </div>
-          {artikel.artikelart !== 'dienstleistung' && (
+          <div className="space-y-1.5">
+            <Label htmlFor="interneNotiz">Interne Notiz</Label>
+            <textarea
+              id="interneNotiz"
+              value={interneNotiz}
+              onChange={(e) => setInterneNotiz(e.target.value)}
+              rows={2}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+            <p className="text-xs text-muted-foreground">Nur intern sichtbar, erscheint nie auf Belegen.</p>
+          </div>
+          {artikel && (
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={bestandsgefuehrt} onChange={(e) => setBestandsgefuehrt(e.target.checked)} />
-              Bestandsgeführt
+              <input type="checkbox" checked={aktiv} onChange={(e) => setAktiv(e.target.checked)} />
+              Aktiv
             </label>
           )}
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={aktiv} onChange={(e) => setAktiv(e.target.checked)} />
-            Aktiv
-          </label>
           {fehler && <p className="text-sm text-destructive">{fehler}</p>}
           {erfolg && <p className="text-sm text-primary">Gespeichert.</p>}
           <Button type="submit" disabled={speichernd}>
-            {speichernd ? 'Speichert…' : 'Speichern'}
+            {speichernd ? 'Speichert…' : artikel ? 'Speichern' : 'Anlegen'}
           </Button>
         </form>
       </CardContent>
@@ -529,5 +616,148 @@ function LieferantenTab({ artikelId }: { artikelId: string }) {
         </Card>
       )}
     </div>
+  );
+}
+
+// Sprachen-Tab: Kurztext/Langtext je Zusatzsprache, Muster aus ERP v1
+// (waelderbytes-suite, ArtikelWizard.tsx UebersetzungenBlock). "de" wird hier
+// bewusst NICHT angeboten - das sind die Felder im Tab "Stammdaten"
+// (bezeichnung/beschreibung), siehe Backend-Kommentar in artikel.service.ts.
+function SprachenTab({ artikelId }: { artikelId: string }) {
+  const [uebersetzungen, setUebersetzungen] = useState<ArtikelUebersetzung[]>([]);
+  const [aktiveSprache, setAktiveSprache] = useState<string | null>(null);
+  const [neueSprache, setNeueSprache] = useState('');
+  const [kurztext, setKurztext] = useState('');
+  const [langtext, setLangtext] = useState('');
+  const [fehler, setFehler] = useState<string | null>(null);
+  const [speichernd, setSpeichernd] = useState(false);
+
+  async function laden() {
+    const liste = await api.get<ArtikelUebersetzung[]>(`/artikel/${artikelId}/uebersetzungen`);
+    setUebersetzungen(liste);
+    if (!aktiveSprache && liste[0]) setAktiveSprache(liste[0].sprache);
+  }
+
+  useEffect(() => {
+    laden();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [artikelId]);
+
+  useEffect(() => {
+    const treffer = uebersetzungen.find((u) => u.sprache === aktiveSprache);
+    setKurztext(treffer?.kurztext ?? '');
+    setLangtext(treffer?.langtext ?? '');
+  }, [aktiveSprache, uebersetzungen]);
+
+  function hinzufuegen() {
+    const code = neueSprache.trim().toLowerCase();
+    if (!code || code === 'de' || uebersetzungen.some((u) => u.sprache === code)) return;
+    setAktiveSprache(code);
+    setNeueSprache('');
+  }
+
+  async function speichern() {
+    if (!aktiveSprache) return;
+    setFehler(null);
+    setSpeichernd(true);
+    try {
+      const saved = await api.put<ArtikelUebersetzung>(`/artikel/${artikelId}/uebersetzungen/${aktiveSprache}`, {
+        kurztext: kurztext || undefined,
+        langtext: langtext || undefined,
+      });
+      setUebersetzungen((liste) => [...liste.filter((u) => u.sprache !== aktiveSprache), saved]);
+    } catch (err) {
+      setFehler(err instanceof ApiError ? err.message : 'Speichern fehlgeschlagen.');
+    } finally {
+      setSpeichernd(false);
+    }
+  }
+
+  async function loeschen(sprache: string) {
+    setFehler(null);
+    try {
+      await api.delete(`/artikel/${artikelId}/uebersetzungen/${sprache}`);
+      setUebersetzungen((liste) => liste.filter((u) => u.sprache !== sprache));
+      if (aktiveSprache === sprache) setAktiveSprache(null);
+    } catch (err) {
+      setFehler(err instanceof ApiError ? err.message : 'Löschen fehlgeschlagen.');
+    }
+  }
+
+  const istNeueSprache = aktiveSprache !== null && !uebersetzungen.some((u) => u.sprache === aktiveSprache);
+
+  return (
+    <Card className="max-w-xl">
+      <CardHeader>
+        <CardTitle className="text-base">Weitere Sprachen für Kurztext/Langtext</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-xs text-muted-foreground">
+          Für Belege an fremdsprachige Kunden (siehe Kunde → Sprache). „de“ wird hier nicht geführt – dafür Kurztext/
+          Langtext im Tab „Stammdaten“ verwenden.
+        </p>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {uebersetzungen.map((u) => (
+            <button
+              key={u.sprache}
+              type="button"
+              onClick={() => setAktiveSprache(u.sprache)}
+              className={cn(
+                'rounded-md border px-2.5 py-1 text-xs font-medium',
+                aktiveSprache === u.sprache ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
+              )}
+            >
+              {u.sprache.toUpperCase()}
+            </button>
+          ))}
+          {istNeueSprache && (
+            <span className="rounded-md border border-primary bg-primary/10 px-2.5 py-1 text-xs font-medium">
+              {aktiveSprache!.toUpperCase()} (neu)
+            </span>
+          )}
+          <Input
+            className="h-7 w-16 text-xs"
+            placeholder="z. B. en"
+            maxLength={5}
+            value={neueSprache}
+            onChange={(e) => setNeueSprache(e.target.value)}
+          />
+          <Button type="button" size="sm" variant="outline" onClick={hinzufuegen}>
+            + Sprache
+          </Button>
+        </div>
+
+        {aktiveSprache && (
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>Kurztext ({aktiveSprache.toUpperCase()})</Label>
+              <Input value={kurztext} onChange={(e) => setKurztext(e.target.value)} maxLength={100} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Langtext ({aktiveSprache.toUpperCase()})</Label>
+              <textarea
+                value={langtext}
+                onChange={(e) => setLangtext(e.target.value)}
+                rows={3}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+            {fehler && <p className="text-sm text-destructive">{fehler}</p>}
+            <div className="flex gap-2">
+              <Button type="button" size="sm" disabled={speichernd} onClick={speichern}>
+                {speichernd ? 'Speichert…' : 'Speichern'}
+              </Button>
+              {!istNeueSprache && (
+                <Button type="button" size="sm" variant="ghost" onClick={() => loeschen(aktiveSprache)}>
+                  <Trash2 className="mr-1 h-3.5 w-3.5" />
+                  Sprache entfernen
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

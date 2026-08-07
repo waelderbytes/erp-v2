@@ -114,6 +114,7 @@ function KundeAnlegenDialog({ onErfolg }: { onErfolg: () => void }) {
   const [strasse, setStrasse] = useState('');
   const [plz, setPlz] = useState('');
   const [ort, setOrt] = useState('');
+  const [sprache, setSprache] = useState('de');
   const [fehler, setFehler] = useState<string | null>(null);
   const [speichernd, setSpeichernd] = useState(false);
 
@@ -127,6 +128,7 @@ function KundeAnlegenDialog({ onErfolg }: { onErfolg: () => void }) {
         firmenname: typ === 'firma' ? firmenname : undefined,
         vorname: typ === 'privatperson' ? vorname : undefined,
         nachname: typ === 'privatperson' ? nachname : undefined,
+        sprache,
         adressen:
           strasse && plz && ort
             ? [{ typ: 'rechnung', strasse, plz, ort }]
@@ -176,6 +178,10 @@ function KundeAnlegenDialog({ onErfolg }: { onErfolg: () => void }) {
               </div>
             </div>
           )}
+          <div className="space-y-1.5">
+            <Label htmlFor="sprache">Sprache (für Belege)</Label>
+            <Input id="sprache" className="w-24" maxLength={5} value={sprache} onChange={(e) => setSprache(e.target.value)} />
+          </div>
           <div className="space-y-1.5">
             <Label>Rechnungsadresse (optional)</Label>
             <Input placeholder="Straße" value={strasse} onChange={(e) => setStrasse(e.target.value)} />

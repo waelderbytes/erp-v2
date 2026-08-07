@@ -5,6 +5,7 @@
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { Artikel } from './entities/artikel.entity';
+import { ArtikelUebersetzung } from './entities/artikel-uebersetzung.entity';
 import { ArtikelLieferant } from './entities/artikel-lieferant.entity';
 import { Artikelkategorie } from './entities/artikelkategorie.entity';
 import { ArtikelkategorieZuordnung } from './entities/artikelkategorie-zuordnung.entity';
@@ -29,7 +30,7 @@ export default new DataSource({
   type: 'postgres',
   url: process.env.DATABASE_URL || 'postgresql://erp:changeme@localhost:5432/erp_tenant',
   entities: [
-    Artikel, ArtikelLieferant, Artikelkategorie, ArtikelkategorieZuordnung, Firma, Nummernkreis,
+    Artikel, ArtikelUebersetzung, ArtikelLieferant, Artikelkategorie, ArtikelkategorieZuordnung, Firma, Nummernkreis,
     Kunde, KundeAdresse, KundeKontakt, KundeBewertung, Bewertungskriterium,
     Lieferant, LieferantAdresse, LieferantKontakt,
     Lager, Lagerbestand, Lagerbewegung,

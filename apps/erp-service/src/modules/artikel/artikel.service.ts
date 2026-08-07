@@ -2,18 +2,21 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Artikel } from '../../database/entities/artikel.entity';
+import { ArtikelUebersetzung } from '../../database/entities/artikel-uebersetzung.entity';
 import { ArtikelLieferant } from '../../database/entities/artikel-lieferant.entity';
 import { FirmaService } from '../firma/firma.service';
 import { ArtikelNummerService, KategorieOhneCodeError } from './artikel-nummer.service';
 import { ArtikelAnlegenDto } from './dto/artikel-anlegen.dto';
 import { ArtikelLieferantZuordnenDto } from './dto/artikel-lieferant-zuordnen.dto';
 import { ArtikelAktualisierenDto } from './dto/artikel-aktualisieren.dto';
+import { ArtikelUebersetzungUpsertDto } from './dto/artikel-uebersetzung-upsert.dto';
 
 @Injectable()
 export class ArtikelService {
   constructor(
     @InjectRepository(Artikel) private readonly artikelRepo: Repository<Artikel>,
     @InjectRepository(ArtikelLieferant) private readonly artikelLieferantRepo: Repository<ArtikelLieferant>,
+    @InjectRepository(ArtikelUebersetzung) private readonly artikelUebersetzungRepo: Repository<ArtikelUebersetzung>,
     private readonly firmaService: FirmaService,
     private readonly artikelNummerService: ArtikelNummerService,
   ) {}
@@ -50,6 +53,7 @@ export class ArtikelService {
       eanGtin: dto.eanGtin ?? null,
       hersteller: dto.hersteller ?? null,
       herstellerArtikelnummer: dto.herstellerArtikelnummer ?? null,
+      interneNotiz: dto.interneNotiz ?? null,
     });
     try {
       return await this.artikelRepo.save(artikel);
@@ -86,6 +90,7 @@ export class ArtikelService {
     if (dto.eanGtin !== undefined) artikel.eanGtin = dto.eanGtin;
     if (dto.hersteller !== undefined) artikel.hersteller = dto.hersteller;
     if (dto.herstellerArtikelnummer !== undefined) artikel.herstellerArtikelnummer = dto.herstellerArtikelnummer;
+    if (dto.interneNotiz !== undefined) artikel.interneNotiz = dto.interneNotiz;
     // Wie beim Anlegen: Dienstleistungen sind nie bestandsgefuehrt, unabhaengig
     // davon, was uebergeben wird - siehe gleiche Logik in anlegen().
     if (dto.bestandsgefuehrt !== undefined) {
@@ -154,5 +159,41 @@ export class ArtikelService {
         .where('id = :id AND artikel_id = :artikelId', { id: lieferantZuordnungId, artikelId })
         .execute();
     });
+  }
+
+  // --- Mehrsprachigkeit (Kurztext/Langtext je Zusatzsprache) -----------------
+  // 'de' wird hier bewusst NICHT angeboten - das sind bezeichnung/beschreibung
+  // direkt auf dem Artikel (siehe artikel.entity.ts, Migration 0008).
+
+  uebersetzungenListe(artikelId: string): Promise<ArtikelUebersetzung[]> {
+    return this.artikelUebersetzungRepo.find({ where: { artikelId }, order: { sprache: 'ASC' } });
+  }
+
+  // PUT-Upsert keyed auf (artikelId, sprache) - kein Uebersetzungs-Id-Konzept im
+  // Frontend noetig, gleiches Muster wie in ERP v1 (waelderbytes-suite).
+  async uebersetzungUpsert(
+    artikelId: string,
+    sprache: string,
+    dto: ArtikelUebersetzungUpsertDto,
+  ): Promise<ArtikelUebersetzung> {
+    if (sprache.toLowerCase() === 'de') {
+      throw new ConflictException(
+        "Sprache 'de' wird nicht als Uebersetzung gepflegt - dafuer bezeichnung/beschreibung direkt am Artikel verwenden.",
+      );
+    }
+    let uebersetzung = await this.artikelUebersetzungRepo.findOneBy({ artikelId, sprache });
+    if (!uebersetzung) {
+      uebersetzung = this.artikelUebersetzungRepo.create({ artikelId, sprache });
+    }
+    if (dto.kurztext !== undefined) uebersetzung.kurztext = dto.kurztext;
+    if (dto.langtext !== undefined) uebersetzung.langtext = dto.langtext;
+    return this.artikelUebersetzungRepo.save(uebersetzung);
+  }
+
+  async uebersetzungLoeschen(artikelId: string, sprache: string): Promise<void> {
+    const ergebnis = await this.artikelUebersetzungRepo.delete({ artikelId, sprache });
+    if (ergebnis.affected === 0) {
+      throw new NotFoundException(`Keine Uebersetzung fuer Sprache '${sprache}' vorhanden.`);
+    }
   }
 }

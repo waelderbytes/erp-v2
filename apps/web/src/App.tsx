@@ -21,6 +21,7 @@ export default function App() {
           <Route element={<Layout />}>
             <Route index element={<Navigate to="/artikel" replace />} />
             <Route path="artikel" element={<ArtikelListe />} />
+            <Route path="artikel/neu" element={<ArtikelDetail />} />
             <Route path="artikel/:id" element={<ArtikelDetail />} />
             <Route path="kunden" element={<KundenListe />} />
             <Route path="lieferanten" element={<LieferantenListe />} />

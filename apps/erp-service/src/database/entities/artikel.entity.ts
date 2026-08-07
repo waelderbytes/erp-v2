@@ -57,6 +57,14 @@ export class Artikel {
   @Column({ name: 'bestandsgefuehrt', default: false })
   bestandsgefuehrt: boolean;
 
+  // Rein internes Notizfeld (z.B. Einkaufskonditionen-Hinweise, Lagerplatz-
+  // Besonderheiten) - erscheint NIE auf Belegen, im Unterschied zu
+  // 'beschreibung' (Langtext, kann auf Angeboten/Rechnungen landen). Bewusst
+  // einsprachig: interne Notizen sind fuers eigene Team, keine Uebersetzung
+  // noetig (anders als bezeichnung/beschreibung, siehe ArtikelUebersetzung).
+  @Column({ name: 'interne_notiz', type: 'text', nullable: true })
+  interneNotiz: string | null;
+
   @Column({ name: 'custom_fields', type: 'jsonb', nullable: true })
   customFields: Record<string, unknown> | null;
 

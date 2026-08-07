@@ -24,6 +24,7 @@ export class KundeService {
       vorname: dto.vorname ?? null,
       nachname: dto.nachname ?? null,
       ustIdnr: dto.ustIdnr ?? null,
+      sprache: dto.sprache ?? 'de',
       adressen: (dto.adressen ?? []).map((a) => ({ ...a, istStandard: a.istStandard ?? false })),
       kontakte: (dto.kontakte ?? []).map((k) => ({ ...k, istHauptkontakt: k.istHauptkontakt ?? false })),
     });

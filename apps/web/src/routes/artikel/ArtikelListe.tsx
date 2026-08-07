@@ -1,15 +1,12 @@
-import { FormEvent, useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowDown, ArrowUp, ArrowUpDown, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { api, ApiError } from '@/lib/api';
-import { Artikel, Artikelart } from '@/lib/types';
+import { Artikel } from '@/lib/types';
 
 type SortSpalte = 'artikelnummer' | 'bezeichnung' | 'artikelart' | 'hersteller';
 
@@ -18,25 +15,22 @@ export function ArtikelListe() {
   const [artikel, setArtikel] = useState<Artikel[]>([]);
   const [ladend, setLadend] = useState(true);
   const [ladeFehler, setLadeFehler] = useState<string | null>(null);
-  const [dialogOffen, setDialogOffen] = useState(false);
   const [suche, setSuche] = useState('');
   const [sortSpalte, setSortSpalte] = useState<SortSpalte>('artikelnummer');
   const [sortAufsteigend, setSortAufsteigend] = useState(true);
 
-  async function laden() {
-    setLadend(true);
-    setLadeFehler(null);
-    try {
-      setArtikel(await api.get<Artikel[]>('/artikel'));
-    } catch (err) {
-      setLadeFehler(err instanceof ApiError ? err.message : 'Artikel konnten nicht geladen werden.');
-    } finally {
-      setLadend(false);
-    }
-  }
-
   useEffect(() => {
-    laden();
+    (async () => {
+      setLadend(true);
+      setLadeFehler(null);
+      try {
+        setArtikel(await api.get<Artikel[]>('/artikel'));
+      } catch (err) {
+        setLadeFehler(err instanceof ApiError ? err.message : 'Artikel konnten nicht geladen werden.');
+      } finally {
+        setLadend(false);
+      }
+    })();
   }, []);
 
   function sortieren(spalte: SortSpalte) {
@@ -90,20 +84,14 @@ export function ArtikelListe() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Artikel</h1>
-        <Dialog open={dialogOffen} onOpenChange={setDialogOffen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Neuer Artikel
-            </Button>
-          </DialogTrigger>
-          <ArtikelAnlegenDialog
-            onErfolg={() => {
-              setDialogOffen(false);
-              laden();
-            }}
-          />
-        </Dialog>
+        {/* Kein Dialog mehr - "Neuer Artikel" fuehrt auf denselben Tab-Screen wie
+            das Bearbeiten (siehe ArtikelDetail.tsx), Muster aus ERP v1
+            uebernommen: erster Tab "Stammdaten" speichert, danach schalten
+            sich die weiteren Tabs (Bestand/Preise/Lieferanten/Sprachen) frei. */}
+        <Button onClick={() => navigate('/artikel/neu')}>
+          <Plus className="mr-2 h-4 w-4" />
+          Neuer Artikel
+        </Button>
       </div>
 
       {ladeFehler && <p className="text-sm text-destructive">{ladeFehler}</p>}
@@ -158,112 +146,5 @@ export function ArtikelListe() {
         </TableBody>
       </Table>
     </div>
-  );
-}
-
-function ArtikelAnlegenDialog({ onErfolg }: { onErfolg: () => void }) {
-  const [artikelart, setArtikelart] = useState<Artikelart>('handelsware');
-  const [bezeichnung, setBezeichnung] = useState('');
-  const [beschreibung, setBeschreibung] = useState('');
-  const [einheit, setEinheit] = useState('');
-  const [eanGtin, setEanGtin] = useState('');
-  const [bestandsgefuehrt, setBestandsgefuehrt] = useState(false);
-  const [hersteller, setHersteller] = useState('');
-  const [herstellerArtikelnummer, setHerstellerArtikelnummer] = useState('');
-  const [fehler, setFehler] = useState<string | null>(null);
-  const [speichernd, setSpeichernd] = useState(false);
-
-  async function absenden(e: FormEvent) {
-    e.preventDefault();
-    setFehler(null);
-    setSpeichernd(true);
-    try {
-      await api.post('/artikel', {
-        artikelart,
-        bezeichnung,
-        beschreibung: beschreibung || undefined,
-        einheit: einheit || undefined,
-        eanGtin: eanGtin || undefined,
-        bestandsgefuehrt: artikelart === 'dienstleistung' ? undefined : bestandsgefuehrt,
-        hersteller: hersteller || undefined,
-        herstellerArtikelnummer: herstellerArtikelnummer || undefined,
-      });
-      onErfolg();
-    } catch (err) {
-      setFehler(err instanceof ApiError ? err.message : 'Artikel konnte nicht angelegt werden.');
-    } finally {
-      setSpeichernd(false);
-    }
-  }
-
-  return (
-    <DialogContent className="max-w-lg">
-      <form onSubmit={absenden}>
-        <DialogHeader>
-          <DialogTitle>Neuer Artikel</DialogTitle>
-        </DialogHeader>
-        <div className="max-h-[70vh] space-y-4 overflow-y-auto pr-1">
-          <div className="space-y-1.5">
-            <Label htmlFor="artikelart">Artikelart</Label>
-            <Select value={artikelart} onValueChange={(v) => setArtikelart(v as Artikelart)}>
-              <SelectTrigger id="artikelart">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="handelsware">Handelsware</SelectItem>
-                <SelectItem value="dienstleistung">Dienstleistung</SelectItem>
-                <SelectItem value="fertigungsartikel">Fertigungsartikel</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="bezeichnung">Bezeichnung</Label>
-            <Input id="bezeichnung" value={bezeichnung} onChange={(e) => setBezeichnung(e.target.value)} required autoFocus />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="beschreibung">Beschreibung</Label>
-            <textarea
-              id="beschreibung"
-              value={beschreibung}
-              onChange={(e) => setBeschreibung(e.target.value)}
-              rows={3}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="einheit">Einheit</Label>
-              <Input id="einheit" placeholder="z. B. Stk, kg, m" value={einheit} onChange={(e) => setEinheit(e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="eanGtin">EAN/GTIN</Label>
-              <Input id="eanGtin" value={eanGtin} onChange={(e) => setEanGtin(e.target.value)} />
-            </div>
-          </div>
-          {artikelart !== 'dienstleistung' && (
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={bestandsgefuehrt} onChange={(e) => setBestandsgefuehrt(e.target.checked)} />
-              Bestandsgeführt
-            </label>
-          )}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="hersteller">Hersteller</Label>
-              <Input id="hersteller" value={hersteller} onChange={(e) => setHersteller(e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="herstellerArtikelnummer">Hersteller-Art.-Nr.</Label>
-              <Input id="herstellerArtikelnummer" value={herstellerArtikelnummer} onChange={(e) => setHerstellerArtikelnummer(e.target.value)} />
-            </div>
-          </div>
-          {fehler && <p className="text-sm text-destructive">{fehler}</p>}
-        </div>
-        <DialogFooter>
-          <Button type="submit" disabled={speichernd}>
-            {speichernd ? 'Speichert…' : 'Anlegen'}
-          </Button>
-        </DialogFooter>
-      </form>
-    </DialogContent>
   );
 }

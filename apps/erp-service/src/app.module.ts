@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Artikel } from './database/entities/artikel.entity';
+import { ArtikelUebersetzung } from './database/entities/artikel-uebersetzung.entity';
 import { ArtikelLieferant } from './database/entities/artikel-lieferant.entity';
 import { Artikelkategorie } from './database/entities/artikelkategorie.entity';
 import { ArtikelkategorieZuordnung } from './database/entities/artikelkategorie-zuordnung.entity';
@@ -38,7 +39,7 @@ import { PreisfindungModule } from './modules/preisfindung/preisfindung.module';
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         url: config.get('DATABASE_URL'),
-        entities: [Artikel, ArtikelLieferant, Artikelkategorie, ArtikelkategorieZuordnung, Firma, Nummernkreis, Kunde, KundeAdresse, KundeKontakt, KundeBewertung, Bewertungskriterium, Lieferant, LieferantAdresse, LieferantKontakt, Lager, Lagerbestand, Lagerbewegung, Bestellung, Bestellposition, Artikelpreis],
+        entities: [Artikel, ArtikelUebersetzung, ArtikelLieferant, Artikelkategorie, ArtikelkategorieZuordnung, Firma, Nummernkreis, Kunde, KundeAdresse, KundeKontakt, KundeBewertung, Bewertungskriterium, Lieferant, LieferantAdresse, LieferantKontakt, Lager, Lagerbestand, Lagerbewegung, Bestellung, Bestellposition, Artikelpreis],
         synchronize: false, // Schema ausschliesslich per Migration, siehe CLAUDE.md
       }),
     }),

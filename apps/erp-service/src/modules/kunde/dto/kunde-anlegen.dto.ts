@@ -69,6 +69,14 @@ export class KundeAnlegenDto {
   @IsString()
   ustIdnr?: string;
 
+  // Steuert spaeter (Belegkette, Phase 3, noch nicht gebaut) welche
+  // Artikel-Uebersetzung auf Belegen an diesen Kunden gezogen wird - siehe
+  // artikel_uebersetzung, Migration 0008. Default 'de' kommt aus der
+  // Spalten-Definition (kunde.entity.ts), hier optional ueberschreibbar.
+  @IsOptional()
+  @IsString()
+  sprache?: string;
+
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
