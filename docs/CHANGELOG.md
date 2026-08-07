@@ -28,6 +28,16 @@ im vollen Sinn.
   Dependency-Install durchgefuehrt) - vor erstem Deploy lokal/in Claude Code bauen und
   testen
 
+### Verifiziert auf dem echten Server (07.08.2026)
+- Server eingerichtet: Hetzner CPX22, Ubuntu 24.04, Docker, UFW, fail2ban, Deploy-User
+  `waelderbytes`, root-Login deaktiviert (siehe scripts/server-setup.sh)
+- Bug gefunden + behoben: Migration-Klassenname brauchte numerischen Zeitstempel-Suffix
+  (TypeORM-Konvention) - `InitialSchema0001` zu `InitialSchema<epoch-ms>` korrigiert
+- Migration 0001_initial_schema erfolgreich gegen echte Postgres ausgefuehrt
+- Audit-Trigger funktional bestaetigt: UPDATE auf `rolle` erzeugt echten `audit_log`-Eintrag
+- Bekannte Einschraenkung: REVOKE auf audit_log wirkt nicht gegen den aktuell genutzten
+  DB-Owner-User - eigene eingeschraenkte DB-Rolle fuer die Services noch zu schaffen
+
 ### Added
 - Projekt-Grundgerüst: Nx-Monorepo-Struktur (Platzhalter-Configs), Docker-Compose für
   lokale Entwicklung, `.env.example`

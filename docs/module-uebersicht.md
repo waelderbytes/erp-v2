@@ -60,7 +60,7 @@ konfigurierbare Zusatzfelder, statt alles hart zu codieren.
 ### Fundament (Phase 0)
 | Modul | Status | Beschreibung |
 |---|---|---|
-| Auth/Benutzerverwaltung | 🚧 Grundfunktionen implementiert | Bootstrap/Login/Refresh, argon2id, Benutzer/Rolle/Berechtigung-Schema inkl. Audit-Log-Trigger (Migration 0001). Eigener NestJS-Auth-Service pro Tenant-Deployment, kein zentraler IdP/Keycloak. Noch offen: echte Benutzerverwaltung (Administrator legt Benutzer an), RBAC-Guard-Feinabgleich gegen rolle_berechtigung |
+| Auth/Benutzerverwaltung | 🚧 Grundfunktionen implementiert, Migration live verifiziert (07.08.2026) | Bootstrap/Login/Refresh, argon2id, Benutzer/Rolle/Berechtigung-Schema inkl. Audit-Log-Trigger (Migration 0001) - auf dem echten Server gegen Postgres getestet, Audit-Trigger per UPDATE-Test bestätigt. Noch offen: echte Benutzerverwaltung (Administrator legt Benutzer an), RBAC-Guard-Feinabgleich gegen rolle_berechtigung, REVOKE auf audit_log wirkt nicht gegen den DB-Owner-User (siehe architecture.md Offene Punkte: eigene eingeschraenkte DB-Rolle noch zu schaffen) |
 | Stammdaten/System-Einstellungen | ⬜ offen | Firmenstammdaten, Nummernkreise, Artikelnummern-Schema "einfach"/"kategorie" (gesperrt sobald erster Artikel existiert, siehe architecture.md Abschnitt 6), Steuersätze, mehrere Firmen/Niederlassungen, Kleinunternehmer-Flag (§19 UStG) |
 | Nummernkreis-Engine | ✅ Konzept festgelegt | Row-Lock (`SELECT ... FOR UPDATE`) + strikte Trennung Vorschlag/Reservierung, siehe architecture.md Abschnitt 6 (Referenz: eigenes ERP v1) |
 
