@@ -18,6 +18,9 @@ import { Bewertungskriterium } from './entities/bewertungskriterium.entity';
 import { Lieferant } from './entities/lieferant.entity';
 import { LieferantAdresse } from './entities/lieferant-adresse.entity';
 import { LieferantKontakt } from './entities/lieferant-kontakt.entity';
+import { Lager } from './entities/lager.entity';
+import { Lagerbestand } from './entities/lagerbestand.entity';
+import { Lagerbewegung } from './entities/lagerbewegung.entity';
 
 export default new DataSource({
   type: 'postgres',
@@ -26,6 +29,7 @@ export default new DataSource({
     Artikel, ArtikelLieferant, Artikelkategorie, ArtikelkategorieZuordnung, Firma, Nummernkreis,
     Kunde, KundeAdresse, KundeKontakt, KundeBewertung, Bewertungskriterium,
     Lieferant, LieferantAdresse, LieferantKontakt,
+    Lager, Lagerbestand, Lagerbewegung,
   ],
   migrations: [__dirname + '/migrations/*.{ts,js}'], // .ts fuer lokalen ts-node-Lauf, .js fuer den kompilierten dist/-Lauf im Container (siehe migration:run:prod)
   migrationsTableName: 'migrations_erp_service',

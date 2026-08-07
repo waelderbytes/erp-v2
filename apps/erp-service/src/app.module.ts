@@ -15,11 +15,15 @@ import { Bewertungskriterium } from './database/entities/bewertungskriterium.ent
 import { Lieferant } from './database/entities/lieferant.entity';
 import { LieferantAdresse } from './database/entities/lieferant-adresse.entity';
 import { LieferantKontakt } from './database/entities/lieferant-kontakt.entity';
+import { Lager } from './database/entities/lager.entity';
+import { Lagerbestand } from './database/entities/lagerbestand.entity';
+import { Lagerbewegung } from './database/entities/lagerbewegung.entity';
 import { ArtikelModule } from './modules/artikel/artikel.module';
 import { FirmaModule } from './modules/firma/firma.module';
 import { NummernkreisModule } from './modules/nummernkreis/nummernkreis.module';
 import { KundeModule } from './modules/kunde/kunde.module';
 import { LieferantModule } from './modules/lieferant/lieferant.module';
+import { LagerModule } from './modules/lager/lager.module';
 
 @Module({
   imports: [
@@ -29,7 +33,7 @@ import { LieferantModule } from './modules/lieferant/lieferant.module';
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         url: config.get('DATABASE_URL'),
-        entities: [Artikel, ArtikelLieferant, Artikelkategorie, ArtikelkategorieZuordnung, Firma, Nummernkreis, Kunde, KundeAdresse, KundeKontakt, KundeBewertung, Bewertungskriterium, Lieferant, LieferantAdresse, LieferantKontakt],
+        entities: [Artikel, ArtikelLieferant, Artikelkategorie, ArtikelkategorieZuordnung, Firma, Nummernkreis, Kunde, KundeAdresse, KundeKontakt, KundeBewertung, Bewertungskriterium, Lieferant, LieferantAdresse, LieferantKontakt, Lager, Lagerbestand, Lagerbewegung],
         synchronize: false, // Schema ausschliesslich per Migration, siehe CLAUDE.md
       }),
     }),
@@ -38,6 +42,7 @@ import { LieferantModule } from './modules/lieferant/lieferant.module';
     NummernkreisModule,
     KundeModule,
     LieferantModule,
+    LagerModule,
   ],
 })
 export class AppModule {}
