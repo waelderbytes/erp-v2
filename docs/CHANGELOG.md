@@ -10,6 +10,16 @@ im vollen Sinn.
 
 ## [Unreleased]
 
+### Auth: Benutzerverwaltung live verifiziert (07.08.2026)
+- Auf dem Server end-to-end getestet: Benutzer angelegt (POST /benutzer -
+  Response bestaetigt, dass kein passwortHash/pinHash mehr mitgeschickt wird),
+  Rollenliste abgerufen (GET /rollen), Rolle 'sachbearbeiter' zugewiesen (POST
+  /benutzer/:id/rollen - Response enthaelt alle 14 Berechtigungen dieser Rolle
+  korrekt), PIN gesetzt (POST /benutzer/:id/pin), Rolle wieder entzogen
+  (DELETE /benutzer/:id/rollen/:rolleId - rollen-Array danach korrekt leer)
+- Damit ist Benutzerverwaltung (Fundament-Modul, Phase 0) vollstaendig
+  implementiert und live verifiziert
+
 ### Auth: echte Benutzerverwaltung (07.08.2026)
 - BenutzerModule + RollenModule (bisher leere Stubs) implementiert - loest den
   in auth.service.ts bootstrap()-Kommentar und den kiosk.controller.ts-TODO
