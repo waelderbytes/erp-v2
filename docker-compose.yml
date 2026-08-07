@@ -1,0 +1,75 @@
+# docker-compose.yml - Tenant-Deployment (1 Stack pro Tenant auf gemeinsamem Host)
+# Siehe docs/architecture.md Abschnitt 8 (Hosting-Strategie): mehrere Tenant-Stacks
+# laufen nebeneinander auf demselben vServer, jeder mit eigener .env / eigenen
+# benannten Volumes / eigener Tenant-DB, alle ueber Traefik geroutet.
+#
+# Reverse Proxy (Traefik) wird NICHT hier, sondern in einem separaten, einmaligen
+# infra-compose.yml auf dem Host betrieben (kommt mit dem ersten echten Deployment) -
+# hier nur die Tenant-eigenen Services, referenzieren das externe Traefik-Netzwerk.
+
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-erp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-erp_tenant}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+
+  auth-service:
+    build: ./apps/auth-service
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+    depends_on:
+      - postgres
+    ports:
+      - "127.0.0.1:3001:3000"
+
+  api-gateway:
+    build: ./apps/api-gateway
+    restart: unless-stopped
+    environment:
+      AUTH_SERVICE_URL: http://auth-service:3000
+    depends_on:
+      - auth-service
+    ports:
+      - "127.0.0.1:3000:3000"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api-${INSTANCE_ID:-inst001}.rule=Host(`${INSTANCE_HOST:-inst001.waelderbytes.de}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.api-${INSTANCE_ID:-inst001}.entrypoints=websecure"
+      - "traefik.http.routers.api-${INSTANCE_ID:-inst001}.tls.certresolver=le"
+
+  web:
+    build: ./apps/web
+    restart: unless-stopped
+    depends_on:
+      - api-gateway
+    ports:
+      - "127.0.0.1:8080:80"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web-${INSTANCE_ID:-inst001}.rule=Host(`${INSTANCE_HOST:-inst001.waelderbytes.de}`)"
+      - "traefik.http.routers.web-${INSTANCE_ID:-inst001}.entrypoints=websecure"
+      - "traefik.http.routers.web-${INSTANCE_ID:-inst001}.tls.certresolver=le"
+
+volumes:
+  postgres_data:
+
+networks:
+  default:
+    name: erp_${INSTANCE_ID:-inst001}
