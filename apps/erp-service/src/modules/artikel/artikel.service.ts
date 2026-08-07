@@ -6,6 +6,7 @@ import { ArtikelLieferant } from '../../database/entities/artikel-lieferant.enti
 import { FirmaService } from '../firma/firma.service';
 import { ArtikelNummerService, KategorieOhneCodeError } from './artikel-nummer.service';
 import { ArtikelAnlegenDto } from './dto/artikel-anlegen.dto';
+import { ArtikelLieferantZuordnenDto } from './dto/artikel-lieferant-zuordnen.dto';
 
 @Injectable()
 export class ArtikelService {
@@ -54,6 +55,26 @@ export class ArtikelService {
 
   find(id: string): Promise<Artikel | null> {
     return this.artikelRepo.findOneBy({ id });
+  }
+
+  // Legt die n:m-Zuordnung Artikel<->Lieferant an. Vorher gibt es keine Zeile,
+  // die per favoritSetzen() favorisiert werden koennte - siehe Kommentar im DTO.
+  lieferantZuordnen(artikelId: string, dto: ArtikelLieferantZuordnenDto): Promise<ArtikelLieferant> {
+    const zuordnung = this.artikelLieferantRepo.create({
+      artikelId,
+      lieferantId: dto.lieferantId,
+      lieferantenArtikelnummer: dto.lieferantenArtikelnummer ?? null,
+      einkaufspreis: dto.einkaufspreis ?? null,
+      lieferzeitTage: dto.lieferzeitTage ?? null,
+    });
+    return this.artikelLieferantRepo.save(zuordnung);
+  }
+
+  lieferantenListe(artikelId: string): Promise<ArtikelLieferant[]> {
+    return this.artikelLieferantRepo.find({
+      where: { artikelId },
+      relations: ['lieferant'],
+    });
   }
 
   // Favoriten-Logik aus docs/feldkatalog.md Abschnitt 1.4: hoechstens ein

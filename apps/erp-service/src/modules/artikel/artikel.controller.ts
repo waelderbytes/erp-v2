@@ -3,6 +3,7 @@ import { JwtAuthGuard } from '../../common/auth';
 import { Berechtigung, RbacGuard } from '../../common/rbac';
 import { ArtikelService } from './artikel.service';
 import { ArtikelAnlegenDto } from './dto/artikel-anlegen.dto';
+import { ArtikelLieferantZuordnenDto } from './dto/artikel-lieferant-zuordnen.dto';
 
 @Controller('artikel')
 @UseGuards(JwtAuthGuard, RbacGuard)
@@ -25,6 +26,18 @@ export class ArtikelController {
   @Berechtigung('artikelstamm', 'schreiben')
   anlegen(@Body() dto: ArtikelAnlegenDto) {
     return this.artikelService.anlegen(dto);
+  }
+
+  @Post(':id/lieferant')
+  @Berechtigung('artikelstamm', 'schreiben')
+  lieferantZuordnen(@Param('id') id: string, @Body() dto: ArtikelLieferantZuordnenDto) {
+    return this.artikelService.lieferantZuordnen(id, dto);
+  }
+
+  @Get(':id/lieferant')
+  @Berechtigung('artikelstamm', 'lesen')
+  lieferantenListe(@Param('id') id: string) {
+    return this.artikelService.lieferantenListe(id);
   }
 
   @Post(':id/lieferant/:zuordnungId/favorit')
