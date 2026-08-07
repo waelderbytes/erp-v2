@@ -10,6 +10,41 @@ im vollen Sinn.
 
 ## [Unreleased]
 
+### Zeiterfassung: neuer zeiterfassung-service - Kommt/Geht/Pause (08.08.2026)
+- Neuer eigenstaendiger NestJS-Service `apps/zeiterfassung-service`, strukturell
+  identisch zu erp-service aufgebaut (eigene TypeORM-Migrationshistorie unter
+  `migrations_zeiterfassung_service`, eigene JWT/RBAC-Pruefung via kopierten
+  `src/common/auth` und `src/common/rbac` - selbe Docker-Build-Context-
+  Einschraenkung wie bei den anderen Services, siehe architecture.md)
+- Neue Entity `Zeitbuchung` (Tabelle `zeitbuchung`): unveraenderliches Ledger
+  (nur INSERT, kein UPDATE/DELETE - kein Audit-Trigger noetig, das Ledger selbst
+  ist der Audit-Trail), Felder typ (kommt/geht/pause_beginn/pause_ende),
+  zeitpunkt, quelle (web/kiosk), optionale GPS-Koordinaten, optionaler Kommentar,
+  optionale auftrag_id (noch ohne FK - Auftrag-Tabelle existiert noch nicht).
+  `benutzer_id` ist ein roher FK auf `benutzer(id)` ohne TypeORM-Relation, da
+  die Tabelle vom auth-service verwaltet wird (gleiche physische Tenant-DB,
+  getrennte Migrationshistorien)
+- Zustandsautomat verhindert unlogische Buchungsfolgen (z. B. "geht" ohne
+  vorheriges "kommt", doppeltes "pause_beginn"): Statusmodell
+  ausgestempelt/eingestempelt/pause mit fest hinterlegter Uebergangstabelle,
+  ungueltige Uebergaenge liefern 409 Conflict
+- Endpoints unter `/zeitbuchung`: POST `/stempeln`, GET `/status` (aktueller
+  Zustand), GET `/heute` (Arbeitszeit/Pausenzeit-Berechnung inkl. laufendem,
+  noch nicht abgeschlossenem Intervall bis "jetzt"), GET `/alle` (Admin/
+  Reporting, RBAC-Berechtigung `zeiterfassung:lesen`)
+- RBAC-Berechtigungen fuer modul_key `zeiterfassung` wurden bereits mit
+  auth-service-Migration 0002 geseedet (sachbearbeiter: lesen+schreiben,
+  aussendienst: nur schreiben - genau das noetig fuer Kiosk-Mitarbeiter ohne
+  vollen ERP-Zugang, lesend: nur lesen)
+- `docker-compose.yml`: neuer Service-Block `zeiterfassung-service` (Port
+  3003, intern 3000), analog zu erp-service
+- `apps/web/nginx.conf`: neue Route `/api/zeitbuchung/*` -> zeiterfassung-
+  service, muss vor der allgemeinen `/api/*`-Regel stehen (gleiches Muster wie
+  bei `/api/auth/*`)
+- Lokal build-verifiziert (`tsc --noEmit` + `nest build`), noch NICHT auf dem
+  Server getestet - Migration 0001 (`CREATE TABLE zeitbuchung`) steht dort noch
+  aus
+
 ### Zeiterfassung: Kiosk-Login live verifiziert (08.08.2026)
 - Siehe vorherigen Eintrag "Kiosk-Login fuer Zeiterfassung" fuer die
   Implementierungsdetails
