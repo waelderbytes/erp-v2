@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Lieferant } from './lieferant.entity';
 
 export type LieferantAdresseTyp = 'rechnung' | 'versand_von' | 'werk' | 'sonstige';
@@ -12,6 +12,7 @@ export class LieferantAdresse {
   lieferantId: string;
 
   @ManyToOne(() => Lieferant, (l) => l.adressen, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'lieferant_id' })
   lieferant: Lieferant;
 
   @Column({ type: 'varchar' })

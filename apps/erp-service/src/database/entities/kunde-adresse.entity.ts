@@ -1,5 +1,5 @@
 // Mehrere Adressen je Kunde, siehe docs/feldkatalog.md Abschnitt 2.2.
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Kunde } from './kunde.entity';
 
 export type KundeAdresseTyp = 'rechnung' | 'lieferung' | 'baustelle' | 'sonstige';
@@ -13,6 +13,7 @@ export class KundeAdresse {
   kundeId: string;
 
   @ManyToOne(() => Kunde, (k) => k.adressen, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'kunde_id' })
   kunde: Kunde;
 
   @Column({ type: 'varchar' })

@@ -1,5 +1,5 @@
 // Ansprechpartner je Kunde, siehe docs/feldkatalog.md Abschnitt 2.3.
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Kunde } from './kunde.entity';
 
 @Entity('kunde_kontakt')
@@ -11,6 +11,7 @@ export class KundeKontakt {
   kundeId: string;
 
   @ManyToOne(() => Kunde, (k) => k.kontakte, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'kunde_id' })
   kunde: Kunde;
 
   @Column()

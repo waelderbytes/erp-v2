@@ -1,5 +1,5 @@
 // Sterne-Bewertung je Kriterium, siehe docs/feldkatalog.md Abschnitt 2.5.
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Kunde } from './kunde.entity';
 import { Bewertungskriterium } from './bewertungskriterium.entity';
 
@@ -12,12 +12,14 @@ export class KundeBewertung {
   kundeId: string;
 
   @ManyToOne(() => Kunde, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'kunde_id' })
   kunde: Kunde;
 
   @Column({ name: 'kriterium_id' })
   kriteriumId: string;
 
   @ManyToOne(() => Bewertungskriterium)
+  @JoinColumn({ name: 'kriterium_id' })
   kriterium: Bewertungskriterium;
 
   @Column({ type: 'smallint' })
