@@ -21,19 +21,21 @@ export class KioskController {
     return this.kioskAuthService.identifizieren(dto);
   }
 
-  // Geraete-Verwaltung ist an 'zeiterfassung':'administrieren' gebunden, bis es
-  // eine eigene Benutzerverwaltung/System-Einstellungen gibt (siehe
-  // docs/module-uebersicht.md "Stammdaten/System-Einstellungen", noch offen).
+  // Geraete-Verwaltung ist Systemadministration (das Geraet gehoert der
+  // Tenant-Installation, keiner einzelnen Person/Rolle) - daher an
+  // 'benutzerverwaltung':'administrieren' gebunden statt an 'zeiterfassung',
+  // seit modules/benutzer existiert (vorher provisorisch an 'zeiterfassung'
+  // gebunden, siehe Git-Historie).
   @Get('geraete')
   @UseGuards(JwtAuthGuard, RbacGuard)
-  @Berechtigung('zeiterfassung', 'administrieren')
+  @Berechtigung('benutzerverwaltung', 'administrieren')
   liste() {
     return this.kioskGeraetService.liste();
   }
 
   @Post('geraete')
   @UseGuards(JwtAuthGuard, RbacGuard)
-  @Berechtigung('zeiterfassung', 'administrieren')
+  @Berechtigung('benutzerverwaltung', 'administrieren')
   anlegen(@Body() dto: KioskGeraetAnlegenDto) {
     return this.kioskGeraetService.anlegen(dto);
   }

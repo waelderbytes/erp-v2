@@ -23,17 +23,27 @@ docs/architecture.md Abschnitt 1).
   (z. B. nur `aussendienst` für reines Stempeln). Tablets authentifizieren sich
   zusätzlich mit einem eigenen Geräte-API-Key (`kiosk_geraet`-Tabelle) als
   Basisschutz gegen PIN-Brute-Force.
+- **Echte Benutzerverwaltung** (`/benutzer/*`, `/rollen/*`): Owner/Administrator
+  legen Benutzer an, bearbeiten Stammdaten (Vor-/Nachname, aktiv/inaktiv,
+  Personalnummer, RFID-UID), setzen Passwort/PIN und weisen Rollen zu/entziehen
+  - ersetzt die bisherigen manuellen DB-Updates. Exklusiv an modul_key
+  `benutzerverwaltung` gebunden (Migration 0003), das keine der
+  Standard-Nicht-Admin-Rollen bekommt - Owner/Administrator passieren den
+  RbacGuard ohnehin per Rollen-Bypass. `GET /rollen` liefert die verfügbaren
+  Rollen (z. B. für ein Dropdown im Frontend).
 
 ## Bekannte Einschränkungen (bewusst, nicht vergessen)
 
 - RFID-Feld (`benutzer.rfid_uid`) ist im Schema vorbereitet, aber die
   Hardware-Anbindung (Kartenleser am Tablet) ist noch nicht gebaut - keine
   Testhardware verfügbar, PIN-Eingabe ist der vollständig getestete Weg
-- Keine echte Benutzerverwaltung (Administrator legt Benutzer/PINs an) -
-  `BenutzerModule` ist weiterhin ein leerer Stub
-- Kiosk-Geräte-Verwaltung hängt aktuell an `zeiterfassung:administrieren`
-  statt einer eigenen Berechtigung - wird überarbeitet, sobald es ein echtes
-  Modul für System-/Geräteverwaltung gibt
+- Kein Self-Service-Passwort-Reset per E-Mail-Link - Administrator setzt das
+  Passwort direkt über `POST /benutzer/:id/passwort`
+- E-Mail-Adresse eines Benutzers kann aktuell nicht geändert werden (bewusst
+  aus `BenutzerAktualisierenDto` ausgeklammert, betrifft Login-Identität)
+- Kein Schutz gegen versehentliches Selbst-Aussperren (z. B. letzte
+  Owner-Rolle von sich selbst entziehen) - für die erste Version bewusst nicht
+  gebaut, kommt bei Bedarf nach
 - REVOKE auf `audit_log` wirkt nicht gegen den aktuell genutzten DB-Owner-User
   (eigene eingeschränkte DB-Rolle noch zu schaffen, siehe architecture.md)
 - `libs/common`-Code hier unter `src/common/` dupliziert (Docker-Build-Context-Grund)

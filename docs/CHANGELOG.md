@@ -10,6 +10,32 @@ im vollen Sinn.
 
 ## [Unreleased]
 
+### Auth: echte Benutzerverwaltung (07.08.2026)
+- BenutzerModule + RollenModule (bisher leere Stubs) implementiert - loest den
+  in auth.service.ts bootstrap()-Kommentar und den kiosk.controller.ts-TODO
+  dokumentierten Zustand ab ("noch nicht implementiert" / manuelle DB-Updates)
+- Neue Endpoints: `POST/GET /benutzer`, `GET /benutzer/:id`, `PATCH
+  /benutzer/:id` (Vorname/Nachname/aktiv/Personalnummer/RFID-UID), `POST
+  /benutzer/:id/passwort`, `POST /benutzer/:id/pin`, `POST DELETE
+  /benutzer/:id/rollen(/:rolleId)`, `GET /rollen`, `GET /rollen/:id`
+- Migration 0003: RBAC-Seed fuer modul_key 'benutzerverwaltung' (lesen/
+  schreiben/administrieren), bewusst OHNE Verknuepfung zu den drei
+  Nicht-Admin-Standardrollen - exklusiv Owner/Administrator, die den RbacGuard
+  ohnehin per Rollen-Bypass passieren
+- Kiosk-Geraete-Verwaltung (`/auth/kiosk/geraete`) von der provisorischen
+  Bindung an `zeiterfassung:administrieren` auf `benutzerverwaltung:
+  administrieren` umgestellt (war im Code als TODO vermerkt, seit es ein
+  echtes Benutzerverwaltungs-Modul gibt)
+- Bug waehrend Implementierung gefunden + behoben, VOR jedem Server-Deploy:
+  `liste()`/`finden()` haetten ohne Gegenmassnahme `passwortHash`/`pinHash`
+  (Argon2-Hashes) im JSON zurueckgegeben - kein globaler
+  ClassSerializerInterceptor im Projekt. Fix: alle oeffentlichen
+  Rueckgabewerte laufen durch eine private `oeffentlich()`-Methode, die beide
+  Felder entfernt; interne Methoden, die den Hash selbst brauchen, bleiben
+  getrennt
+- Lokal build-verifiziert (`tsc --noEmit` + `nest build`), noch NICHT auf dem
+  Server getestet - Migration 0003 steht dort noch aus
+
 ### Zeiterfassung: zeiterfassung-service live verifiziert (07.08.2026)
 - Auf dem Server end-to-end getestet: Migration 0001 (CREATE TABLE zeitbuchung)
   gelaufen, kommt gebucht, doppeltes kommt korrekt mit 409/Conflict abgelehnt
