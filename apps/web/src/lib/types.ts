@@ -117,6 +117,23 @@ export interface ArtikelLog {
   lagerbewegungen: Lagerbewegung[];
 }
 
+export interface StuecklistePosition {
+  id: string;
+  kopfArtikelId: string;
+  positionArtikelId: string;
+  positionArtikel?: Artikel;
+  menge: string;
+  sortierung: number;
+}
+
+export interface StuecklisteKnoten {
+  positionId: string | null;
+  artikel: Artikel;
+  menge: string;
+  effektiveMenge: string;
+  kinder: StuecklisteKnoten[];
+}
+
 export type BestellungStatus = 'offen' | 'bestellt' | 'teilweise_geliefert' | 'abgeschlossen' | 'storniert';
 
 export interface Bestellposition {

@@ -23,6 +23,8 @@ import {
   Lager,
   Lagerbestand,
   Lieferant,
+  StuecklisteKnoten,
+  StuecklistePosition,
 } from '@/lib/types';
 
 // Ein Screen fuer Anlegen UND Bearbeiten (Route "/artikel/neu" bzw. "/artikel/:id"),
@@ -96,6 +98,12 @@ export function ArtikelDetail() {
       tooltip: !artikel ? stammdatenNichtGespeichert : undefined,
     },
     { value: 'sprachen', label: 'Sprachen', deaktiviert: !artikel, tooltip: !artikel ? stammdatenNichtGespeichert : undefined },
+    {
+      value: 'stueckliste',
+      label: 'Stückliste',
+      deaktiviert: !artikel || !artikel.bomfaehig,
+      tooltip: !artikel ? stammdatenNichtGespeichert : !artikel.bomfaehig ? 'Artikel ist nicht stücklistenfähig' : undefined,
+    },
     { value: 'log', label: 'Log', deaktiviert: !artikel, tooltip: !artikel ? stammdatenNichtGespeichert : undefined },
   ];
 
@@ -167,6 +175,11 @@ export function ArtikelDetail() {
         {artikel && (
           <TabsContent value="sprachen">
             <SprachenTab artikelId={artikel.id} />
+          </TabsContent>
+        )}
+        {artikel?.bomfaehig && (
+          <TabsContent value="stueckliste">
+            <StuecklisteTab artikel={artikel} />
           </TabsContent>
         )}
         {artikel && (
@@ -1156,6 +1169,330 @@ function LogTab({ artikelId }: { artikelId: string }) {
           ))}
         </TableBody>
       </Table>
+    </div>
+  );
+}
+
+// Roadmap-Punkt "Stückliste (BOM)", mehrstufig (Nutzerentscheidung
+// 08.08.2026): direkte Positionen dieses Artikels sind hier editierbar
+// (hinzufügen/Menge ändern/entfernen). Ist eine Position selbst
+// stücklistenfähig, kann sie nur zur ANSICHT aufgeklappt werden (lazy
+// geladen, rekursiv) - editiert wird eine Unter-Stückliste bewusst auf der
+// eigenen Artikelseite dieser Position, nicht verschachtelt hier, um die
+// Oberfläche nicht zu überladen. Zirkelbezug-Schutz passiert serverseitig
+// (siehe stueckliste.service.ts), das Frontend verlässt sich darauf.
+function StuecklisteTab({ artikel }: { artikel: Artikel }) {
+  const [positionen, setPositionen] = useState<StuecklistePosition[]>([]);
+  const [artikelListe, setArtikelListe] = useState<Artikel[]>([]);
+  const [neuPositionArtikelId, setNeuPositionArtikelId] = useState<string | null>(null);
+  const [neuMenge, setNeuMenge] = useState('1');
+  const [fehler, setFehler] = useState<string | null>(null);
+  const [speichernd, setSpeichernd] = useState(false);
+  const [druckLaedt, setDruckLaedt] = useState(false);
+
+  async function laden() {
+    const [p, liste] = await Promise.all([
+      api.get<StuecklistePosition[]>(`/artikel/${artikel.id}/stueckliste`),
+      api.get<Artikel[]>('/artikel'),
+    ]);
+    setPositionen(p);
+    setArtikelListe(liste.filter((a) => a.id !== artikel.id));
+  }
+
+  useEffect(() => {
+    laden();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [artikel.id]);
+
+  const artikelOptionen = artikelListe.map((a) => ({ id: a.id, label: `${a.artikelnummer} – ${a.bezeichnung}` }));
+
+  async function hinzufuegen() {
+    if (!neuPositionArtikelId || !neuMenge) return;
+    setFehler(null);
+    setSpeichernd(true);
+    try {
+      await api.post(`/artikel/${artikel.id}/stueckliste`, {
+        positionArtikelId: neuPositionArtikelId,
+        menge: neuMenge,
+      });
+      setNeuPositionArtikelId(null);
+      setNeuMenge('1');
+      await laden();
+    } catch (err) {
+      setFehler(err instanceof ApiError ? err.message : 'Position konnte nicht hinzugefügt werden.');
+    } finally {
+      setSpeichernd(false);
+    }
+  }
+
+  async function mengeAendern(positionId: string, menge: string) {
+    setFehler(null);
+    try {
+      await api.patch(`/artikel/${artikel.id}/stueckliste/${positionId}`, { menge });
+      await laden();
+    } catch (err) {
+      setFehler(err instanceof ApiError ? err.message : 'Menge konnte nicht geändert werden.');
+    }
+  }
+
+  async function entfernen(positionId: string) {
+    setFehler(null);
+    try {
+      await api.delete(`/artikel/${artikel.id}/stueckliste/${positionId}`);
+      await laden();
+    } catch (err) {
+      setFehler(err instanceof ApiError ? err.message : 'Position konnte nicht entfernt werden.');
+    }
+  }
+
+  // Druckbare, komplett aufgelöste Strukturstückliste (alle Ebenen auf
+  // einmal) - oeffnet bewusst ein eigenes Fenster mit minimalem HTML statt
+  // die App-Navigation/Buttons mitzudrucken.
+  async function drucken() {
+    setDruckLaedt(true);
+    setFehler(null);
+    try {
+      const baum = await api.get<StuecklisteKnoten>(`/artikel/${artikel.id}/stueckliste/aufgeloest`);
+      const zeilen: { ebene: number; artikelnummer: string; bezeichnung: string; menge: string; effektiveMenge: string; einheit: string }[] = [];
+      function einsammeln(knoten: StuecklisteKnoten, ebene: number) {
+        if (ebene > 0) {
+          zeilen.push({
+            ebene,
+            artikelnummer: knoten.artikel.artikelnummer,
+            bezeichnung: knoten.artikel.bezeichnung,
+            menge: knoten.menge,
+            effektiveMenge: knoten.effektiveMenge,
+            einheit: knoten.artikel.einheit?.code ?? '',
+          });
+        }
+        knoten.kinder.forEach((k) => einsammeln(k, ebene + 1));
+      }
+      einsammeln(baum, 0);
+
+      const fenster = window.open('', '_blank');
+      if (!fenster) {
+        setFehler('Popup wurde vom Browser blockiert - bitte Popups für diese Seite erlauben.');
+        return;
+      }
+      const zeilenHtml = zeilen
+        .map(
+          (z) => `<tr>
+            <td style="padding-left:${(z.ebene - 1) * 20}px">${z.artikelnummer}</td>
+            <td>${z.bezeichnung}</td>
+            <td style="text-align:right">${z.menge} ${z.einheit}</td>
+            <td style="text-align:right">${z.effektiveMenge} ${z.einheit}</td>
+          </tr>`,
+        )
+        .join('');
+      fenster.document.write(`<!doctype html>
+        <html lang="de">
+        <head>
+          <meta charset="utf-8" />
+          <title>Strukturstückliste ${artikel.artikelnummer} – ${artikel.bezeichnung}</title>
+          <style>
+            body { font-family: sans-serif; font-size: 12px; padding: 24px; color: #111; }
+            h1 { font-size: 16px; margin-bottom: 2px; }
+            p { color: #555; margin-top: 0; }
+            table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+            th, td { border-bottom: 1px solid #ddd; padding: 4px 8px; font-size: 12px; text-align: left; }
+            th { background: #f0f0f0; }
+          </style>
+        </head>
+        <body>
+          <h1>Strukturstückliste: ${artikel.artikelnummer} – ${artikel.bezeichnung}</h1>
+          <p>Erstellt am ${new Date().toLocaleString('de-DE')}</p>
+          <table>
+            <thead>
+              <tr><th>Artikelnummer</th><th>Bezeichnung</th><th>Menge (je Elternteil)</th><th>Menge gesamt</th></tr>
+            </thead>
+            <tbody>${zeilenHtml || '<tr><td colspan="4">Keine Positionen vorhanden.</td></tr>'}</tbody>
+          </table>
+        </body>
+        </html>`);
+      fenster.document.close();
+      fenster.focus();
+      fenster.print();
+    } catch (err) {
+      setFehler(err instanceof ApiError ? err.message : 'Strukturstückliste konnte nicht geladen werden.');
+    } finally {
+      setDruckLaedt(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-4">
+        <p className="max-w-md text-xs text-muted-foreground">
+          Direkte Positionen dieses Artikels. Ist eine Position selbst stücklistenfähig, lässt sie sich aufklappen
+          (nur zur Ansicht - bearbeitet wird sie auf ihrer eigenen Artikelseite).
+        </p>
+        <Button type="button" variant="outline" size="sm" disabled={druckLaedt} onClick={drucken}>
+          {druckLaedt ? 'Lädt…' : 'Strukturstückliste drucken'}
+        </Button>
+      </div>
+
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Artikel</TableHead>
+            <TableHead className="w-32">Menge</TableHead>
+            <TableHead className="w-10" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {positionen.length === 0 && (
+            <TableRow>
+              <TableCell colSpan={3} className="text-center text-muted-foreground">
+                Noch keine Positionen vorhanden.
+              </TableCell>
+            </TableRow>
+          )}
+          {positionen.map((p) => (
+            <StuecklisteZeile key={p.id} position={p} onMengeAendern={mengeAendern} onEntfernen={entfernen} />
+          ))}
+        </TableBody>
+      </Table>
+
+      <Card className="max-w-lg">
+        <CardHeader>
+          <CardTitle className="text-base">Position hinzufügen</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="space-y-1.5">
+            <Label>Artikel</Label>
+            <SearchCreateDropdown
+              value={neuPositionArtikelId}
+              options={artikelOptionen}
+              placeholder="Artikel suchen…"
+              onSelect={setNeuPositionArtikelId}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Menge</Label>
+            <Input value={neuMenge} onChange={(e) => setNeuMenge(e.target.value)} placeholder="z. B. 4" />
+          </div>
+          {fehler && <p className="text-sm text-destructive">{fehler}</p>}
+          <Button type="button" disabled={speichernd || !neuPositionArtikelId} onClick={hinzufuegen}>
+            {speichernd ? 'Speichert…' : 'Hinzufügen'}
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function StuecklisteZeile({
+  position,
+  onMengeAendern,
+  onEntfernen,
+}: {
+  position: StuecklistePosition;
+  onMengeAendern: (positionId: string, menge: string) => void;
+  onEntfernen: (positionId: string) => void;
+}) {
+  const [menge, setMenge] = useState(position.menge);
+  const [aufgeklappt, setAufgeklappt] = useState(false);
+  const istBomfaehig = position.positionArtikel?.bomfaehig ?? false;
+
+  return (
+    <>
+      <TableRow>
+        <TableCell>
+          <div className="flex items-center gap-1.5">
+            {istBomfaehig ? (
+              <button
+                type="button"
+                onClick={() => setAufgeklappt((v) => !v)}
+                className="w-4 shrink-0 text-muted-foreground"
+                title={aufgeklappt ? 'Zuklappen' : 'Aufklappen'}
+              >
+                {aufgeklappt ? '▾' : '▸'}
+              </button>
+            ) : (
+              <span className="w-4 shrink-0" />
+            )}
+            <span className="font-mono text-xs text-muted-foreground">{position.positionArtikel?.artikelnummer}</span>
+            <span className="truncate">{position.positionArtikel?.bezeichnung ?? position.positionArtikelId}</span>
+          </div>
+        </TableCell>
+        <TableCell>
+          <Input
+            className="h-7"
+            value={menge}
+            onChange={(e) => setMenge(e.target.value)}
+            onBlur={() => menge !== position.menge && onMengeAendern(position.id, menge)}
+          />
+        </TableCell>
+        <TableCell>
+          <Button variant="ghost" size="icon" title="Entfernen" onClick={() => onEntfernen(position.id)}>
+            <Trash2 className="h-4 w-4 text-muted-foreground" />
+          </Button>
+        </TableCell>
+      </TableRow>
+      {aufgeklappt && istBomfaehig && (
+        <TableRow>
+          <TableCell colSpan={3} className="bg-muted/30 p-0">
+            <StuecklisteUnterbaum artikelId={position.positionArtikelId} ebene={1} />
+          </TableCell>
+        </TableRow>
+      )}
+    </>
+  );
+}
+
+// Nur-Ansicht, rekursiv, lazy-geladen je Ebene - siehe Kommentar bei
+// StuecklisteTab, warum hier nicht editiert wird.
+function StuecklisteUnterbaum({ artikelId, ebene }: { artikelId: string; ebene: number }) {
+  const [positionen, setPositionen] = useState<StuecklistePosition[] | null>(null);
+
+  useEffect(() => {
+    api
+      .get<StuecklistePosition[]>(`/artikel/${artikelId}/stueckliste`)
+      .then(setPositionen)
+      .catch(() => setPositionen([]));
+  }, [artikelId]);
+
+  if (positionen === null) return <p className="px-3 py-1.5 text-xs text-muted-foreground">Lädt…</p>;
+  if (positionen.length === 0) return <p className="px-3 py-1.5 text-xs text-muted-foreground">Keine Positionen.</p>;
+
+  return (
+    <div className="divide-y divide-border">
+      {positionen.map((p) => (
+        <StuecklisteUnterzeile key={p.id} position={p} ebene={ebene} />
+      ))}
+    </div>
+  );
+}
+
+function StuecklisteUnterzeile({ position, ebene }: { position: StuecklistePosition; ebene: number }) {
+  const [aufgeklappt, setAufgeklappt] = useState(false);
+  const istBomfaehig = position.positionArtikel?.bomfaehig ?? false;
+
+  return (
+    <div>
+      <div
+        className="flex items-center justify-between px-3 py-1.5 text-sm"
+        style={{ paddingLeft: `${12 + ebene * 16}px` }}
+      >
+        <div className="flex items-center gap-1.5">
+          {istBomfaehig ? (
+            <button
+              type="button"
+              onClick={() => setAufgeklappt((v) => !v)}
+              className="w-4 shrink-0 text-muted-foreground"
+              title={aufgeklappt ? 'Zuklappen' : 'Aufklappen'}
+            >
+              {aufgeklappt ? '▾' : '▸'}
+            </button>
+          ) : (
+            <span className="w-4 shrink-0" />
+          )}
+          <span className="font-mono text-xs text-muted-foreground">{position.positionArtikel?.artikelnummer}</span>
+          <span>{position.positionArtikel?.bezeichnung ?? position.positionArtikelId}</span>
+        </div>
+        <span className="text-xs text-muted-foreground">{position.menge}</span>
+      </div>
+      {aufgeklappt && istBomfaehig && <StuecklisteUnterbaum artikelId={position.positionArtikelId} ebene={ebene + 1} />}
     </div>
   );
 }
