@@ -31,6 +31,11 @@ export interface Artikel {
   aktiv: boolean;
   bestandsgefuehrt: boolean;
   bomfaehig: boolean;
+  gewichtKg: string | null;
+  laengeMm: string | null;
+  breiteMm: string | null;
+  hoeheMm: string | null;
+  mindestbestand: string | null;
 }
 
 export interface ArtikelUebersetzung {

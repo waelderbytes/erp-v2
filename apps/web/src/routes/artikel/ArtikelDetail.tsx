@@ -228,6 +228,11 @@ function StammdatenTab({
   const [interneNotiz, setInterneNotiz] = useState(artikel?.interneNotiz ?? '');
   const [bestandsgefuehrt, setBestandsgefuehrt] = useState(artikel?.bestandsgefuehrt ?? false);
   const [bomfaehig, setBomfaehig] = useState(artikel?.bomfaehig ?? false);
+  const [gewichtKg, setGewichtKg] = useState(artikel?.gewichtKg ?? '');
+  const [laengeMm, setLaengeMm] = useState(artikel?.laengeMm ?? '');
+  const [breiteMm, setBreiteMm] = useState(artikel?.breiteMm ?? '');
+  const [hoeheMm, setHoeheMm] = useState(artikel?.hoeheMm ?? '');
+  const [mindestbestand, setMindestbestand] = useState(artikel?.mindestbestand ?? '');
   const [aktiv, setAktiv] = useState(artikel?.aktiv ?? true);
   const [fehler, setFehler] = useState<string | null>(null);
   const [erfolg, setErfolg] = useState(false);
@@ -312,6 +317,11 @@ function StammdatenTab({
           hersteller: hersteller || undefined,
           herstellerArtikelnummer: herstellerArtikelnummer || undefined,
           interneNotiz: interneNotiz || undefined,
+          gewichtKg: gewichtKg || undefined,
+          laengeMm: laengeMm || undefined,
+          breiteMm: breiteMm || undefined,
+          hoeheMm: hoeheMm || undefined,
+          mindestbestand: mindestbestand || undefined,
         });
         onGespeichert(neuer, true);
       } else {
@@ -325,6 +335,11 @@ function StammdatenTab({
           interneNotiz: interneNotiz || undefined,
           bestandsgefuehrt,
           bomfaehig,
+          gewichtKg: gewichtKg || undefined,
+          laengeMm: laengeMm || undefined,
+          breiteMm: breiteMm || undefined,
+          hoeheMm: hoeheMm || undefined,
+          mindestbestand: mindestbestand || undefined,
           aktiv,
         });
         onGespeichert(aktualisiert, false);
@@ -433,6 +448,17 @@ function StammdatenTab({
               Bestandsgeführt
             </label>
           )}
+          {bestandsgefuehrt && (
+            <div className="space-y-1.5">
+              <Label htmlFor="mindestbestand">Mindestbestand</Label>
+              <Input
+                id="mindestbestand"
+                value={mindestbestand}
+                onChange={(e) => setMindestbestand(e.target.value)}
+                placeholder="z. B. 10"
+              />
+            </div>
+          )}
           {artikelart === 'fertigungsartikel' && (
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={bomfaehig} onChange={(e) => setBomfaehig(e.target.checked)} />
@@ -451,6 +477,24 @@ function StammdatenTab({
                 value={herstellerArtikelnummer}
                 onChange={(e) => setHerstellerArtikelnummer(e.target.value)}
               />
+            </div>
+          </div>
+          <div className="grid grid-cols-4 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="gewichtKg">Gewicht (kg)</Label>
+              <Input id="gewichtKg" value={gewichtKg} onChange={(e) => setGewichtKg(e.target.value)} placeholder="z. B. 2.5" />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="laengeMm">Länge (mm)</Label>
+              <Input id="laengeMm" value={laengeMm} onChange={(e) => setLaengeMm(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="breiteMm">Breite (mm)</Label>
+              <Input id="breiteMm" value={breiteMm} onChange={(e) => setBreiteMm(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="hoeheMm">Höhe (mm)</Label>
+              <Input id="hoeheMm" value={hoeheMm} onChange={(e) => setHoeheMm(e.target.value)} />
             </div>
           </div>
           <div className="space-y-1.5">
@@ -1064,6 +1108,11 @@ const ARTIKEL_FELD_LABEL: Record<string, string> = {
   interne_notiz: 'Interne Notiz',
   bestandsgefuehrt: 'Bestandsgeführt',
   bomfaehig: 'Stücklistenfähig',
+  gewicht_kg: 'Gewicht',
+  laenge_mm: 'Länge',
+  breite_mm: 'Breite',
+  hoehe_mm: 'Höhe',
+  mindestbestand: 'Mindestbestand',
   aktiv: 'Aktiv',
 };
 
