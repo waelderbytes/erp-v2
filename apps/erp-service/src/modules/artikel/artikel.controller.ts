@@ -3,6 +3,9 @@ import { JwtAuthGuard } from '../../common/auth';
 import { Berechtigung, RbacGuard } from '../../common/rbac';
 import { ArtikelService } from './artikel.service';
 import { ArtikelLogService } from './artikel-log.service';
+import { StuecklisteService } from './stueckliste.service';
+import { StecklistePositionAnlegenDto } from './dto/stueckliste-position-anlegen.dto';
+import { StecklistePositionAktualisierenDto } from './dto/stueckliste-position-aktualisieren.dto';
 import { ArtikelAnlegenDto } from './dto/artikel-anlegen.dto';
 import { ArtikelLieferantZuordnenDto } from './dto/artikel-lieferant-zuordnen.dto';
 import { ArtikelAktualisierenDto } from './dto/artikel-aktualisieren.dto';
@@ -14,6 +17,7 @@ export class ArtikelController {
   constructor(
     private readonly artikelService: ArtikelService,
     private readonly artikelLogService: ArtikelLogService,
+    private readonly stuecklisteService: StuecklisteService,
   ) {}
 
   @Get()
@@ -34,6 +38,46 @@ export class ArtikelController {
   @Berechtigung('artikelstamm', 'lesen')
   log(@Param('id') id: string) {
     return this.artikelLogService.log(id);
+  }
+
+  // Roadmap-Punkt "Stueckliste (BOM)", mehrstufig - siehe stueckliste.service.ts.
+  @Get(':id/stueckliste')
+  @Berechtigung('artikelstamm', 'lesen')
+  stuecklistePositionen(@Param('id') id: string) {
+    return this.stuecklisteService.positionen(id);
+  }
+
+  // Komplett aufgeloeste Baumstruktur (alle Ebenen) fuer die druckbare
+  // Strukturstueckliste.
+  @Get(':id/stueckliste/aufgeloest')
+  @Berechtigung('artikelstamm', 'lesen')
+  stuecklisteAufgeloest(@Param('id') id: string) {
+    return this.stuecklisteService.aufgeloest(id);
+  }
+
+  @Post(':id/stueckliste')
+  @Berechtigung('artikelstamm', 'schreiben')
+  stecklistePositionHinzufuegen(@Param('id') id: string, @Body() dto: StecklistePositionAnlegenDto) {
+    return this.stuecklisteService.hinzufuegen(id, dto);
+  }
+
+  @Patch(':id/stueckliste/:positionId')
+  @Berechtigung('artikelstamm', 'schreiben')
+  stecklistePositionAktualisieren(
+    @Param('id') id: string,
+    @Param('positionId') positionId: string,
+    @Body() dto: StecklistePositionAktualisierenDto,
+  ) {
+    return this.stuecklisteService.aktualisieren(id, positionId, dto);
+  }
+
+  // Explizit 204 - siehe Kommentar bei den Uebersetzungen weiter unten,
+  // gleiches durchgaengiges Pattern im Projekt.
+  @Delete(':id/stueckliste/:positionId')
+  @HttpCode(204)
+  @Berechtigung('artikelstamm', 'schreiben')
+  stecklistePositionEntfernen(@Param('id') id: string, @Param('positionId') positionId: string) {
+    return this.stuecklisteService.entfernen(id, positionId);
   }
 
   @Post()

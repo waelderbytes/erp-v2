@@ -26,6 +26,7 @@ import { Bestellung } from './entities/bestellung.entity';
 import { Bestellposition } from './entities/bestellposition.entity';
 import { Artikelpreis } from './entities/artikelpreis.entity';
 import { Einheit } from './entities/einheit.entity';
+import { StuecklistePosition } from './entities/stueckliste-position.entity';
 
 export default new DataSource({
   type: 'postgres',
@@ -38,6 +39,7 @@ export default new DataSource({
     Bestellung, Bestellposition,
     Artikelpreis,
     Einheit,
+    StuecklistePosition,
   ],
   migrations: [__dirname + '/migrations/*.{ts,js}'], // .ts fuer lokalen ts-node-Lauf, .js fuer den kompilierten dist/-Lauf im Container (siehe migration:run:prod)
   migrationsTableName: 'migrations_erp_service',

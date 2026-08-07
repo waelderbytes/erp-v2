@@ -23,6 +23,7 @@ import { Bestellung } from './database/entities/bestellung.entity';
 import { Bestellposition } from './database/entities/bestellposition.entity';
 import { Artikelpreis } from './database/entities/artikelpreis.entity';
 import { Einheit } from './database/entities/einheit.entity';
+import { StuecklistePosition } from './database/entities/stueckliste-position.entity';
 import { ArtikelModule } from './modules/artikel/artikel.module';
 import { FirmaModule } from './modules/firma/firma.module';
 import { NummernkreisModule } from './modules/nummernkreis/nummernkreis.module';
@@ -41,7 +42,7 @@ import { EinheitModule } from './modules/einheit/einheit.module';
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         url: config.get('DATABASE_URL'),
-        entities: [Artikel, ArtikelUebersetzung, ArtikelLieferant, Artikelkategorie, ArtikelkategorieZuordnung, Firma, Nummernkreis, Kunde, KundeAdresse, KundeKontakt, KundeBewertung, Bewertungskriterium, Lieferant, LieferantAdresse, LieferantKontakt, Lager, Lagerbestand, Lagerbewegung, Bestellung, Bestellposition, Artikelpreis, Einheit],
+        entities: [Artikel, ArtikelUebersetzung, ArtikelLieferant, Artikelkategorie, ArtikelkategorieZuordnung, Firma, Nummernkreis, Kunde, KundeAdresse, KundeKontakt, KundeBewertung, Bewertungskriterium, Lieferant, LieferantAdresse, LieferantKontakt, Lager, Lagerbestand, Lagerbewegung, Bestellung, Bestellposition, Artikelpreis, Einheit, StuecklistePosition],
         synchronize: false, // Schema ausschliesslich per Migration, siehe CLAUDE.md
       }),
     }),
