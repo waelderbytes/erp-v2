@@ -5,13 +5,25 @@
 // synchron, Feldnamen 1:1 wie in den DTOs/Entities.
 export type Artikelart = 'handelsware' | 'dienstleistung' | 'fertigungsartikel';
 
+export interface Einheit {
+  id: string;
+  code: string;
+  name: string;
+  aktiv: boolean;
+  dezimalstellen: number;
+}
+
 export interface Artikel {
   id: string;
   artikelnummer: string;
   artikelart: Artikelart;
   bezeichnung: string;
   beschreibung: string | null;
-  einheit: string | null;
+  einheitId: string | null;
+  // Nur gesetzt, wenn das Backend die Relation mitlaedt (liste()/find() ja,
+  // anlegen()/aktualisieren() nicht - siehe artikel.service.ts). Frontend
+  // sollte primaer einheitId nutzen, einheit nur fuer Anzeige-Komfort.
+  einheit?: Einheit;
   eanGtin: string | null;
   hersteller: string | null;
   herstellerArtikelnummer: string | null;

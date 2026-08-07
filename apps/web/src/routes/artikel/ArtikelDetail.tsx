@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SearchCreateDropdown } from '@/components/ui/search-create-dropdown';
 import { api, ApiError } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import {
@@ -16,6 +17,7 @@ import {
   ArtikelUebersetzung,
   Artikelart,
   Artikelpreis,
+  Einheit,
   Kunde,
   Lager,
   Lagerbestand,
@@ -183,7 +185,7 @@ function StammdatenTab({
   const [artikelart, setArtikelart] = useState<Artikelart>(artikel?.artikelart ?? 'handelsware');
   const [bezeichnung, setBezeichnung] = useState(artikel?.bezeichnung ?? '');
   const [beschreibung, setBeschreibung] = useState(artikel?.beschreibung ?? '');
-  const [einheit, setEinheit] = useState(artikel?.einheit ?? '');
+  const [einheitId, setEinheitId] = useState<string | null>(artikel?.einheitId ?? null);
   const [eanGtin, setEanGtin] = useState(artikel?.eanGtin ?? '');
   const [hersteller, setHersteller] = useState(artikel?.hersteller ?? '');
   const [herstellerArtikelnummer, setHerstellerArtikelnummer] = useState(artikel?.herstellerArtikelnummer ?? '');
@@ -193,6 +195,67 @@ function StammdatenTab({
   const [fehler, setFehler] = useState<string | null>(null);
   const [erfolg, setErfolg] = useState(false);
   const [speichernd, setSpeichernd] = useState(false);
+
+  // Einheiten-Dropdown (Nutzerentscheidung 08.08.2026: echtes Modul statt
+  // statischer Liste, siehe docs/CHANGELOG.md). SearchCreateDropdown 1:1 nach
+  // dem Vorbild aus ERP v1 uebernommen - tippen filtert, "+ anlegen" oeffnet
+  // das kleine Popup fuer Code/Name/Nachkommastellen.
+  const [einheiten, setEinheiten] = useState<Einheit[]>([]);
+  const [neueEinheitEingabe, setNeueEinheitEingabe] = useState<string | null>(null);
+
+  useEffect(() => {
+    api
+      .get<Einheit[]>('/einheiten')
+      .then(setEinheiten)
+      .catch(() => undefined);
+  }, []);
+
+  // Aktuell zugewiesene Einheit bleibt auch dann in der Liste, wenn sie
+  // inzwischen deaktiviert wurde - sonst wuerde einheitId bei bestehenden
+  // Artikeln ploetzlich "leer" angezeigt (gleiches Muster wie in v1).
+  const einheitOptionen = einheiten
+    .filter((e) => e.aktiv || e.id === einheitId)
+    .map((e) => ({ id: e.id, label: `${e.code} – ${e.name}` }));
+
+  async function einheitAnlegen(code: string, name: string, dezimalstellen: number) {
+    const neu = await api.post<Einheit>('/einheiten', { code, name, dezimalstellen });
+    setEinheiten((liste) => [...liste, neu]);
+    setEinheitId(neu.id);
+    setNeueEinheitEingabe(null);
+  }
+
+  async function einheitDeaktivieren(id: string) {
+    try {
+      await api.delete(`/einheiten/${id}`);
+      setEinheiten((liste) => liste.map((e) => (e.id === id ? { ...e, aktiv: false } : e)));
+    } catch {
+      setFehler('Einheit konnte nicht deaktiviert werden.');
+    }
+  }
+
+  // Kurztext-Vorschlaege aus vorhandenen Artikeln (Nutzerwunsch 08.08.2026:
+  // Tippen soll auf ggf. bereits existierende, aehnlich benannte Artikel
+  // hinweisen - Duplikat-Vermeidung). Nur beim Neuanlegen relevant, laedt die
+  // Liste einmalig (nutzt die ohnehin vorhandene GET /artikel, kein neuer
+  // Backend-Endpoint noetig). Klick auf einen Vorschlag ist nur ein Hinweis,
+  // keine Pflichtauswahl - Kurztext bleibt Freitext.
+  const [artikelVorschlaege, setArtikelVorschlaege] = useState<Artikel[]>([]);
+  const [bezeichnungFokussiert, setBezeichnungFokussiert] = useState(false);
+
+  useEffect(() => {
+    if (artikel) return; // nur beim Neuanlegen relevant
+    api
+      .get<Artikel[]>('/artikel')
+      .then(setArtikelVorschlaege)
+      .catch(() => undefined);
+  }, [artikel]);
+
+  const bezeichnungTreffer =
+    !artikel && bezeichnung.trim().length >= 2
+      ? artikelVorschlaege
+          .filter((a) => a.bezeichnung.toLowerCase().includes(bezeichnung.trim().toLowerCase()))
+          .slice(0, 8)
+      : [];
 
   async function speichern(e: FormEvent) {
     e.preventDefault();
@@ -205,7 +268,7 @@ function StammdatenTab({
           artikelart,
           bezeichnung,
           beschreibung: beschreibung || undefined,
-          einheit: einheit || undefined,
+          einheitId: einheitId || undefined,
           eanGtin: eanGtin || undefined,
           bestandsgefuehrt: artikelart === 'dienstleistung' ? undefined : bestandsgefuehrt,
           hersteller: hersteller || undefined,
@@ -217,7 +280,7 @@ function StammdatenTab({
         const aktualisiert = await api.patch<Artikel>(`/artikel/${artikel.id}`, {
           bezeichnung,
           beschreibung: beschreibung || undefined,
-          einheit: einheit || undefined,
+          einheitId: einheitId || undefined,
           eanGtin: eanGtin || undefined,
           hersteller: hersteller || undefined,
           herstellerArtikelnummer: herstellerArtikelnummer || undefined,
@@ -256,9 +319,37 @@ function StammdatenTab({
                   ArtikelAktualisierenDto-Kommentar im Backend. */}
             </div>
           )}
-          <div className="space-y-1.5">
+          <div className="relative space-y-1.5">
             <Label htmlFor="bezeichnung">Kurztext (Bezeichnung, Deutsch)</Label>
-            <Input id="bezeichnung" value={bezeichnung} onChange={(e) => setBezeichnung(e.target.value)} required autoFocus />
+            <Input
+              id="bezeichnung"
+              value={bezeichnung}
+              onChange={(e) => setBezeichnung(e.target.value)}
+              onFocus={() => setBezeichnungFokussiert(true)}
+              onBlur={() => setTimeout(() => setBezeichnungFokussiert(false), 150)}
+              required
+              autoFocus
+              autoComplete="off"
+            />
+            {bezeichnungFokussiert && bezeichnungTreffer.length > 0 && (
+              <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-48 overflow-auto rounded-md border border-border bg-popover bg-background shadow-md">
+                <p className="border-b border-border px-2 py-1 text-xs text-muted-foreground">
+                  Ähnliche vorhandene Artikel:
+                </p>
+                {bezeichnungTreffer.map((a) => (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => setBezeichnung(a.bezeichnung)}
+                    className="flex w-full items-center justify-between px-2 py-1.5 text-left text-sm hover:bg-accent"
+                  >
+                    <span className="truncate">{a.bezeichnung}</span>
+                    <span className="ml-2 shrink-0 font-mono text-xs text-muted-foreground">{a.artikelnummer}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="beschreibung">Langtext (Beschreibung, Deutsch)</Label>
@@ -274,9 +365,23 @@ function StammdatenTab({
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
+            <div className="relative space-y-1.5">
               <Label htmlFor="einheit">Einheit</Label>
-              <Input id="einheit" placeholder="z. B. Stk, kg, m" value={einheit} onChange={(e) => setEinheit(e.target.value)} />
+              <SearchCreateDropdown
+                value={einheitId}
+                options={einheitOptionen}
+                placeholder="Suchen/anlegen…"
+                onSelect={setEinheitId}
+                onCreateRequest={(eingabe) => setNeueEinheitEingabe(eingabe)}
+                onDeactivate={einheitDeaktivieren}
+              />
+              {neueEinheitEingabe !== null && (
+                <EinheitAnlegenPopover
+                  vorschlagName={neueEinheitEingabe}
+                  onCancel={() => setNeueEinheitEingabe(null)}
+                  onCreate={einheitAnlegen}
+                />
+              )}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="eanGtin">EAN/GTIN</Label>
@@ -328,6 +433,74 @@ function StammdatenTab({
         </form>
       </CardContent>
     </Card>
+  );
+}
+
+// Kleines Anlegen-Popup fuer neue Einheiten direkt aus dem Dropdown heraus,
+// 1:1 nach dem Vorbild aus ERP v1 (EinheitDialog.tsx) - fragt zusaetzlich die
+// Nachkommastellen ab ("0,0005/Stück macht keinen Sinn"), Default 2.
+function EinheitAnlegenPopover({
+  vorschlagName,
+  onCancel,
+  onCreate,
+}: {
+  vorschlagName: string;
+  onCancel: () => void;
+  onCreate: (code: string, name: string, dezimalstellen: number) => Promise<void>;
+}) {
+  const [code, setCode] = useState('');
+  const [name, setName] = useState(vorschlagName);
+  const [dezimalstellen, setDezimalstellen] = useState('2');
+  const [speichernd, setSpeichernd] = useState(false);
+  const [fehler, setFehler] = useState<string | null>(null);
+
+  async function anlegen() {
+    if (!code.trim() || !name.trim()) return;
+    setSpeichernd(true);
+    setFehler(null);
+    try {
+      await onCreate(code.trim(), name.trim(), Math.max(0, Math.min(6, parseInt(dezimalstellen, 10) || 0)));
+    } catch (err) {
+      setFehler(err instanceof ApiError ? err.message : 'Anlegen fehlgeschlagen.');
+    } finally {
+      setSpeichernd(false);
+    }
+  }
+
+  return (
+    <div
+      className="absolute left-0 top-full z-50 mt-1 w-72 space-y-2 rounded-md border border-border bg-popover bg-background p-3 shadow-md"
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      <p className="text-xs font-semibold">Neue Einheit</p>
+      <div className="space-y-1">
+        <Label className="text-xs">Code (z. B. „Stk“, „Std“, „kg“)</Label>
+        <Input value={code} maxLength={10} onChange={(e) => setCode(e.target.value)} autoFocus />
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">Bezeichnung</Label>
+        <Input value={name} onChange={(e) => setName(e.target.value)} />
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">Nachkommastellen (0 = ganzzahlig, z. B. Stück)</Label>
+        <Input
+          type="number"
+          min={0}
+          max={6}
+          value={dezimalstellen}
+          onChange={(e) => setDezimalstellen(e.target.value)}
+        />
+      </div>
+      {fehler && <p className="text-xs text-destructive">{fehler}</p>}
+      <div className="flex gap-2 pt-1">
+        <Button type="button" size="sm" disabled={speichernd || !code.trim() || !name.trim()} onClick={anlegen}>
+          Anlegen
+        </Button>
+        <Button type="button" size="sm" variant="outline" onClick={onCancel}>
+          Abbrechen
+        </Button>
+      </div>
+    </div>
   );
 }
 
