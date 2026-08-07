@@ -24,6 +24,7 @@ import {
   Lager,
   Lagerbestand,
   Lieferant,
+  Steuersatz,
   StuecklisteKnoten,
   StuecklistePosition,
 } from '@/lib/types';
@@ -222,6 +223,7 @@ function StammdatenTab({
   const [bezeichnung, setBezeichnung] = useState(artikel?.bezeichnung ?? '');
   const [beschreibung, setBeschreibung] = useState(artikel?.beschreibung ?? '');
   const [einheitId, setEinheitId] = useState<string | null>(artikel?.einheitId ?? null);
+  const [steuersatzId, setSteuersatzId] = useState<string>(artikel?.steuersatzId ?? '');
   const [eanGtin, setEanGtin] = useState(artikel?.eanGtin ?? '');
   const [hersteller, setHersteller] = useState(artikel?.hersteller ?? '');
   const [herstellerArtikelnummer, setHerstellerArtikelnummer] = useState(artikel?.herstellerArtikelnummer ?? '');
@@ -251,6 +253,27 @@ function StammdatenTab({
       .then(setEinheiten)
       .catch(() => undefined);
   }, []);
+
+  // Steuersaetze (Modul Stammdaten/System-Einstellungen) - beim Neuanlegen
+  // wird der Standard-Steuersatz (i.d.R. 19%) vorbelegt, damit das Feld
+  // nicht leer als Pflichtfeld blockiert (siehe feldkatalog.md).
+  const [steuersaetze, setSteuersaetze] = useState<Steuersatz[]>([]);
+
+  useEffect(() => {
+    api
+      .get<Steuersatz[]>('/steuersaetze')
+      .then((liste) => {
+        setSteuersaetze(liste);
+        if (!artikel) {
+          const standard = liste.find((s) => s.istStandard);
+          if (standard) setSteuersatzId(standard.id);
+        }
+      })
+      .catch(() => undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const steuersatzOptionen = steuersaetze.filter((s) => s.aktiv || s.id === steuersatzId);
 
   // Aktuell zugewiesene Einheit bleibt auch dann in der Liste, wenn sie
   // inzwischen deaktiviert wurde - sonst wuerde einheitId bei bestehenden
@@ -303,6 +326,10 @@ function StammdatenTab({
     e.preventDefault();
     setFehler(null);
     setErfolg(false);
+    if (!steuersatzId) {
+      setFehler('Bitte einen Steuersatz auswählen.');
+      return;
+    }
     setSpeichernd(true);
     try {
       if (!artikel) {
@@ -311,6 +338,7 @@ function StammdatenTab({
           bezeichnung,
           beschreibung: beschreibung || undefined,
           einheitId: einheitId || undefined,
+          steuersatzId,
           eanGtin: eanGtin || undefined,
           bestandsgefuehrt: artikelart === 'dienstleistung' ? undefined : bestandsgefuehrt,
           bomfaehig: artikelart === 'fertigungsartikel' ? bomfaehig : undefined,
@@ -329,6 +357,7 @@ function StammdatenTab({
           bezeichnung,
           beschreibung: beschreibung || undefined,
           einheitId: einheitId || undefined,
+          steuersatzId,
           eanGtin: eanGtin || undefined,
           hersteller: hersteller || undefined,
           herstellerArtikelnummer: herstellerArtikelnummer || undefined,
@@ -441,6 +470,21 @@ function StammdatenTab({
               <Label htmlFor="eanGtin">EAN/GTIN</Label>
               <Input id="eanGtin" value={eanGtin} onChange={(e) => setEanGtin(e.target.value)} />
             </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="steuersatz">Steuersatz</Label>
+            <Select value={steuersatzId} onValueChange={setSteuersatzId}>
+              <SelectTrigger id="steuersatz">
+                <SelectValue placeholder="Steuersatz wählen…" />
+              </SelectTrigger>
+              <SelectContent>
+                {steuersatzOptionen.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.bezeichnung} ({s.satz}%)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           {artikelart !== 'dienstleistung' && (
             <label className="flex items-center gap-2 text-sm">

@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Package, Users, Truck, Warehouse, ShoppingCart, Tags, LogOut, Clock, UserCog } from 'lucide-react';
+import { Package, Users, Truck, Warehouse, ShoppingCart, Tags, LogOut, Clock, UserCog, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getCurrentUser, logout } from '@/lib/auth';
 
@@ -43,7 +43,15 @@ const navigationGruppen: NavGroup[] = [
   },
   {
     titel: 'Verwaltung',
-    items: [{ to: '/benutzer', label: 'Benutzer', icon: UserCog, nurAdmin: true }],
+    items: [
+      { to: '/benutzer', label: 'Benutzer', icon: UserCog, nurAdmin: true },
+      // Stammdaten (Firma/Steuersaetze/Nummernkreise) ist RBAC-seitig ueber
+      // den eigenen modul_key 'stammdaten' geschuetzt, der standardmaessig
+      // niemandem ausser Owner/Administrator zugeteilt ist (siehe
+      // steuersatz.controller.ts) - nurAdmin hier ist rein die UX-Spiegelung
+      // davon, keine eigene Sicherheitsgrenze.
+      { to: '/stammdaten', label: 'Stammdaten', icon: Settings, nurAdmin: true },
+    ],
   },
   // Naechste Gruppe folgt hier, z.B. "Projekte" (Phase 2).
 ];

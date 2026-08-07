@@ -13,6 +13,40 @@ export interface Einheit {
   dezimalstellen: number;
 }
 
+export interface Steuersatz {
+  id: string;
+  bezeichnung: string;
+  satz: string;
+  aktiv: boolean;
+  istStandard: boolean;
+}
+
+export interface Firma {
+  id: number;
+  artikelnummernSchema: 'einfach' | 'kategorie';
+  artikelnummernStellen: number;
+  name: string | null;
+  strasse: string | null;
+  plz: string | null;
+  ort: string | null;
+  land: string;
+  ustIdNr: string | null;
+  steuernummer: string | null;
+  telefon: string | null;
+  email: string | null;
+  kleinunternehmer: boolean;
+}
+
+export interface Nummernkreis {
+  id: string;
+  entityKey: string;
+  label: string;
+  prefix: string;
+  startValue: number;
+  nextValue: number;
+  stellen: number;
+}
+
 export interface Artikel {
   id: string;
   artikelnummer: string;
@@ -24,6 +58,9 @@ export interface Artikel {
   // anlegen()/aktualisieren() nicht - siehe artikel.service.ts). Frontend
   // sollte primaer einheitId nutzen, einheit nur fuer Anzeige-Komfort.
   einheit?: Einheit;
+  steuersatzId: string;
+  // Analog einheit - nur gesetzt, wenn die Relation mitgeladen wurde.
+  steuersatz?: Steuersatz;
   eanGtin: string | null;
   hersteller: string | null;
   herstellerArtikelnummer: string | null;
