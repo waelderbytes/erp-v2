@@ -38,6 +38,19 @@ export class Artikel {
   @Column({ name: 'ean_gtin', nullable: true })
   eanGtin: string | null;
 
+  // Herstellername, falls abweichend vom Lieferanten - siehe feldkatalog.md
+  // Abschnitt 1.2.
+  @Column({ nullable: true })
+  hersteller: string | null;
+
+  // MPN (Manufacturer Part Number). Global eindeutig (Nutzerentscheidung
+  // 08.08.2026) - verhindert doppelt angelegte Artikel fuer dasselbe Produkt.
+  // Durchgesetzt per partiellem Unique-Index (siehe Migration), nicht per
+  // @Column({unique:true}), weil NULL/nicht vorhandene MPN weiterhin erlaubt
+  // bleiben muss (nicht jeder Artikel hat eine Herstellerartikelnummer).
+  @Column({ name: 'hersteller_artikelnummer', nullable: true })
+  herstellerArtikelnummer: string | null;
+
   @Column({ default: true })
   aktiv: boolean;
 

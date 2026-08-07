@@ -10,6 +10,27 @@ im vollen Sinn.
 
 ## [Unreleased]
 
+### Artikel: Herstellerartikelnummer ergaenzt (08.08.2026)
+- Nutzeranfrage: Herstellerartikelnummer (MPN) fehlte komplett, obwohl in
+  feldkatalog.md Abschnitt 1.2 vorgesehen - nie umgesetzt
+- Neue Spalten `artikel.hersteller` / `artikel.hersteller_artikelnummer`
+  (Migration 0007), global eindeutig per partiellem Unique-Index (NULL bleibt
+  erlaubt), verhindert doppelt angelegte Artikel fuer dasselbe Produkt
+- `POST /artikel` liefert bei Duplikat jetzt eine klare 409-Fehlermeldung statt
+  eines rohen 500ers (Postgres unique_violation abgefangen)
+
+### Preisfindung live verifiziert (08.08.2026)
+- Neue Endpoints: `POST /preise`, `GET /preise/artikel/:artikelId`, `GET
+  /preise/ermitteln?artikelId=&menge=&kundeId=&datum=`
+- Migration 0006_preisfindung: `artikelpreis`-Tabelle (Staffelpreise,
+  kundenspezifische Preise, Aktionspreise ueber eine Tabelle), RBAC-Seed
+  modul_key 'preisfindung'
+- Auf dem Server getestet: Basispreis (19.90) + Staffelpreis ab Menge 10 (16.50)
+  angelegt, Ermittlung liefert bei Menge 5 den Basispreis, bei Menge 15 korrekt
+  den Staffelpreis
+- Damit ist Phase 1 (Warenwirtschaft: Artikel, Kunde/Lieferant, Lager, Einkauf,
+  Preisfindung) vollstaendig implementiert und live verifiziert
+
 ### Einkauf/Bestellwesen live verifiziert (08.08.2026)
 - Neue Endpoints: `GET/POST /bestellungen`, `GET /bestellungen/:id`, `POST
   /bestellungen/:id/bestellen`, `POST /bestellungen/wareneingang`

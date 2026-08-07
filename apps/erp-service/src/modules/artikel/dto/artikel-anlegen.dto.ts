@@ -24,4 +24,12 @@ export class ArtikelAnlegenDto {
   @IsOptional()
   @IsBoolean()
   bestandsgefuehrt?: boolean;
+
+  @IsOptional()
+  @IsString()
+  hersteller?: string;
+
+  @IsOptional()
+  @IsString()
+  herstellerArtikelnummer?: string;
 }

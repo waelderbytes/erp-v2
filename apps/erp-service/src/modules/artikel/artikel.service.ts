@@ -45,8 +45,23 @@ export class ArtikelService {
       hauptgruppeId: dto.hauptgruppeId ?? null,
       untergruppeId: dto.untergruppeId ?? null,
       bestandsgefuehrt: dto.artikelart !== 'dienstleistung' && (dto.bestandsgefuehrt ?? false),
+      hersteller: dto.hersteller ?? null,
+      herstellerArtikelnummer: dto.herstellerArtikelnummer ?? null,
     });
-    return this.artikelRepo.save(artikel);
+    try {
+      return await this.artikelRepo.save(artikel);
+    } catch (e) {
+      // Postgres-Fehlercode 23505 = unique_violation (siehe Migration
+      // 0007_artikel_hersteller_artikelnummer.ts, partieller Unique-Index auf
+      // hersteller_artikelnummer). Klare fachliche Fehlermeldung statt eines
+      // rohen 500ers mit DB-Interna.
+      if ((e as { code?: string }).code === '23505') {
+        throw new ConflictException(
+          `Ein Artikel mit der Herstellerartikelnummer '${dto.herstellerArtikelnummer}' existiert bereits.`,
+        );
+      }
+      throw e;
+    }
   }
 
   liste(): Promise<Artikel[]> {
