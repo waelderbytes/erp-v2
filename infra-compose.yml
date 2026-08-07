@@ -1,3 +1,4 @@
+name: erp-infra
 # infra-compose.yml - EINMALIG pro Host, NICHT pro Tenant (Gegensatz zu
 # docker-compose.yml, das ist pro Tenant-Stack). Reverse Proxy (Traefik) fuer alle
 # Tenant-Stacks auf diesem Server, siehe docs/architecture.md Abschnitt 8
