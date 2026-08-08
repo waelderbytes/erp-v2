@@ -15,6 +15,8 @@ import { ArtikelLogService } from './artikel-log.service';
 import { StuecklisteService } from './stueckliste.service';
 import { ArtikelService } from './artikel.service';
 import { ArtikelController } from './artikel.controller';
+import { ArtikelkategorieService } from './artikelkategorie.service';
+import { ArtikelkategorieController } from './artikelkategorie.controller';
 import { JwtStrategy } from '../../common/auth';
 
 @Module({
@@ -24,7 +26,7 @@ import { JwtStrategy } from '../../common/auth';
     FirmaModule,
     NummernkreisModule,
   ],
-  controllers: [ArtikelController],
-  providers: [ArtikelService, ArtikelNummerService, ArtikelLogService, StuecklisteService, JwtStrategy],
+  controllers: [ArtikelController, ArtikelkategorieController],
+  providers: [ArtikelService, ArtikelNummerService, ArtikelLogService, StuecklisteService, ArtikelkategorieService, JwtStrategy],
 })
 export class ArtikelModule {}

@@ -17,9 +17,11 @@ import {
   ArtikelLog,
   ArtikelUebersetzung,
   Artikelart,
+  Artikelkategorie,
   Artikelpreis,
   Benutzer,
   Einheit,
+  Firma,
   Kunde,
   Lager,
   Lagerbestand,
@@ -242,6 +244,58 @@ function StammdatenTab({
   const [erfolg, setErfolg] = useState(false);
   const [speichernd, setSpeichernd] = useState(false);
 
+  // Kategoriebasierte Artikelnummer (Ober-/Untergruppe) - nur beim Anlegen
+  // relevant (siehe artikel-aktualisieren.dto.ts-Kommentar: nach dem Anlegen
+  // nicht mehr aenderbar) und nur, wenn firma.artikelnummernSchema ===
+  // 'kategorie' ist (siehe StammdatenPage.tsx, Tab "Artikel-Warengruppen").
+  // Nutzerforderung 08.08.2026 (Kundendemo).
+  const [firma, setFirma] = useState<Firma | null>(null);
+  const [hauptgruppen, setHauptgruppen] = useState<Artikelkategorie[]>([]);
+  const [untergruppen, setUntergruppen] = useState<Artikelkategorie[]>([]);
+  const [hauptgruppeId, setHauptgruppeId] = useState<string | null>(null);
+  const [untergruppeId, setUntergruppeId] = useState<string | null>(null);
+  const [nummernVorschau, setNummernVorschau] = useState<string | null>(null);
+  const [nummernVorschauFehler, setNummernVorschauFehler] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (artikel) return; // nur beim Anlegen relevant
+    api
+      .get<Firma>('/firma')
+      .then(setFirma)
+      .catch(() => undefined);
+  }, [artikel]);
+
+  useEffect(() => {
+    if (artikel || firma?.artikelnummernSchema !== 'kategorie') return;
+    Promise.all([
+      api.get<Artikelkategorie[]>('/artikelkategorien?typ=haupt'),
+      api.get<Artikelkategorie[]>('/artikelkategorien?typ=unter'),
+    ])
+      .then(([haupt, unter]) => {
+        setHauptgruppen(haupt.filter((k) => k.aktiv));
+        setUntergruppen(unter.filter((k) => k.aktiv));
+      })
+      .catch(() => undefined);
+  }, [artikel, firma]);
+
+  useEffect(() => {
+    if (!hauptgruppeId || !untergruppeId) {
+      setNummernVorschau(null);
+      setNummernVorschauFehler(null);
+      return;
+    }
+    api
+      .get<{ nummer: string }>(`/artikelkategorien/vorschau-nummer?hauptgruppeId=${hauptgruppeId}&untergruppeId=${untergruppeId}`)
+      .then((r) => {
+        setNummernVorschau(r.nummer);
+        setNummernVorschauFehler(null);
+      })
+      .catch((err) => {
+        setNummernVorschau(null);
+        setNummernVorschauFehler(err instanceof ApiError ? err.message : 'Vorschau nicht möglich.');
+      });
+  }, [hauptgruppeId, untergruppeId]);
+
   // Einheiten-Dropdown (Nutzerentscheidung 08.08.2026: echtes Modul statt
   // statischer Liste, siehe docs/CHANGELOG.md). SearchCreateDropdown 1:1 nach
   // dem Vorbild aus ERP v1 uebernommen - tippen filtert, "+ anlegen" oeffnet
@@ -352,6 +406,8 @@ function StammdatenTab({
           breiteMm: breiteMm || undefined,
           hoeheMm: hoeheMm || undefined,
           mindestbestand: mindestbestand || undefined,
+          hauptgruppeId: firma?.artikelnummernSchema === 'kategorie' ? hauptgruppeId || undefined : undefined,
+          untergruppeId: firma?.artikelnummernSchema === 'kategorie' ? untergruppeId || undefined : undefined,
         });
         onGespeichert(neuer, true);
       } else {
@@ -402,6 +458,49 @@ function StammdatenTab({
               </Select>
               {/* Nach dem Anlegen nicht mehr aenderbar - siehe
                   ArtikelAktualisierenDto-Kommentar im Backend. */}
+            </div>
+          )}
+          {!artikel && firma?.artikelnummernSchema === 'kategorie' && (
+            <div className="space-y-1.5 rounded-md border border-border p-3">
+              <Label>Artikelnummer (kategoriebasiert)</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Select value={hauptgruppeId ?? ''} onValueChange={(v) => setHauptgruppeId(v || null)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Hauptgruppe…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {hauptgruppen.map((k) => (
+                      <SelectItem key={k.id} value={k.id}>
+                        {k.name}
+                        {k.code ? ` (${k.code})` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={untergruppeId ?? ''} onValueChange={(v) => setUntergruppeId(v || null)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Untergruppe…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {untergruppen.map((k) => (
+                      <SelectItem key={k.id} value={k.id}>
+                        {k.name}
+                        {k.code ? ` (${k.code})` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {nummernVorschau && (
+                <p className="font-mono text-xs text-muted-foreground">Nächste Nummer: {nummernVorschau}</p>
+              )}
+              {nummernVorschauFehler && <p className="text-xs text-destructive">{nummernVorschauFehler}</p>}
+              {!hauptgruppeId || !untergruppeId ? (
+                <p className="text-xs text-muted-foreground">
+                  Ohne Auswahl wird die einfache, fortlaufende Nummer vergeben. Neue Gruppen lassen sich unter
+                  Stammdaten → Artikel-Warengruppen anlegen.
+                </p>
+              ) : null}
             </div>
           )}
           <div className="relative space-y-1.5">

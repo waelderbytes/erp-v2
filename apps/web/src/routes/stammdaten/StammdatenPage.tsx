@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { api, ApiError } from '@/lib/api';
-import { Firma, Nummernkreis, Steuersatz } from '@/lib/types';
+import { Artikelkategorie, Firma, Nummernkreis, Steuersatz } from '@/lib/types';
 import { PageHeading } from '@/components/ui/page-heading';
 
 export function StammdatenPage() {
@@ -25,6 +25,7 @@ export function StammdatenPage() {
           <TabsTrigger value="firma">Firma</TabsTrigger>
           <TabsTrigger value="steuersaetze">Steuersätze</TabsTrigger>
           <TabsTrigger value="nummernkreise">Nummernkreise</TabsTrigger>
+          <TabsTrigger value="artikelkategorien">Artikel-Warengruppen</TabsTrigger>
         </TabsList>
         <TabsContent value="firma">
           <FirmaTab />
@@ -34,6 +35,9 @@ export function StammdatenPage() {
         </TabsContent>
         <TabsContent value="nummernkreise">
           <NummernkreiseTab />
+        </TabsContent>
+        <TabsContent value="artikelkategorien">
+          <ArtikelkategorienTab />
         </TabsContent>
       </Tabs>
     </div>
@@ -526,5 +530,154 @@ function NummernkreiseTab() {
         </TableBody>
       </Table>
     </div>
+  );
+}
+
+// Verwaltung der Artikel-Haupt-/Untergruppen fuer das kategoriebasierte
+// Artikelnummern-Schema (siehe FirmaTab oben, Feld "Schema"). Bisher gab es
+// nur die Nummernvergabe selbst - ohne diese Verwaltung war das Schema
+// 'kategorie' nicht wirklich nutzbar (Nutzerforderung 08.08.2026, Kundendemo).
+// Zwei Spalten (Haupt-/Untergruppe) statt einer gemeinsamen Liste, weil beide
+// unabhaengig voneinander angelegt und erst beim Artikel selbst kombiniert
+// werden (siehe ArtikelDetail.tsx::StammdatenTab).
+function ArtikelkategorienTab() {
+  return (
+    <div className="grid max-w-4xl gap-4 md:grid-cols-2">
+      <KategorieSpalte typ="haupt" titel="Hauptgruppen" />
+      <KategorieSpalte typ="unter" titel="Untergruppen" />
+    </div>
+  );
+}
+
+function KategorieSpalte({ typ, titel }: { typ: 'haupt' | 'unter'; titel: string }) {
+  const [liste, setListe] = useState<Artikelkategorie[]>([]);
+  const [ladend, setLadend] = useState(true);
+  const [ladeFehler, setLadeFehler] = useState<string | null>(null);
+  const [neuName, setNeuName] = useState('');
+  const [neuCode, setNeuCode] = useState('');
+  const [anlegend, setAnlegend] = useState(false);
+  const [anlegenFehler, setAnlegenFehler] = useState<string | null>(null);
+  const [aktionFehler, setAktionFehler] = useState<string | null>(null);
+
+  async function laden() {
+    setLadend(true);
+    setLadeFehler(null);
+    try {
+      setListe(await api.get<Artikelkategorie[]>(`/artikelkategorien?typ=${typ}`));
+    } catch (err) {
+      setLadeFehler(err instanceof ApiError ? err.message : 'Gruppen konnten nicht geladen werden.');
+    } finally {
+      setLadend(false);
+    }
+  }
+
+  useEffect(() => {
+    laden();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function anlegen(e: FormEvent) {
+    e.preventDefault();
+    setAnlegenFehler(null);
+    setAnlegend(true);
+    try {
+      const neu = await api.post<Artikelkategorie>('/artikelkategorien', {
+        typ,
+        name: neuName,
+        code: neuCode || undefined,
+      });
+      setListe((l) => [...l, neu].sort((a, b) => a.name.localeCompare(b.name)));
+      setNeuName('');
+      setNeuCode('');
+    } catch (err) {
+      setAnlegenFehler(err instanceof ApiError ? err.message : 'Anlegen fehlgeschlagen.');
+    } finally {
+      setAnlegend(false);
+    }
+  }
+
+  async function aktivToggeln(k: Artikelkategorie) {
+    setAktionFehler(null);
+    try {
+      await api.patch<Artikelkategorie>(`/artikelkategorien/${k.id}`, { aktiv: !k.aktiv });
+      await laden();
+    } catch (err) {
+      setAktionFehler(err instanceof ApiError ? err.message : 'Aktion fehlgeschlagen.');
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{titel}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <form onSubmit={anlegen} className="flex items-end gap-2">
+          <div className="flex-1 space-y-1.5">
+            <Label htmlFor={`${typ}-name`}>Name</Label>
+            <Input id={`${typ}-name`} value={neuName} onChange={(e) => setNeuName(e.target.value)} required />
+          </div>
+          <div className="w-24 space-y-1.5">
+            <Label htmlFor={`${typ}-code`}>Code</Label>
+            <Input
+              id={`${typ}-code`}
+              value={neuCode}
+              maxLength={10}
+              onChange={(e) => setNeuCode(e.target.value.toUpperCase())}
+              placeholder="z. B. BAU"
+            />
+          </div>
+          <Button type="submit" size="sm" disabled={anlegend}>
+            <Plus className="mr-2 h-4 w-4" />
+            Anlegen
+          </Button>
+        </form>
+        <p className="text-xs text-muted-foreground">
+          Ohne Code faellt die Nummernvergabe fuer diese Gruppe automatisch auf das einfache Schema zurueck.
+        </p>
+        {anlegenFehler && <p className="text-sm text-destructive">{anlegenFehler}</p>}
+        {ladeFehler && <p className="text-sm text-destructive">{ladeFehler}</p>}
+        {aktionFehler && <p className="text-sm text-destructive">{aktionFehler}</p>}
+
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Code</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="w-28" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {ladend && (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center text-muted-foreground">
+                  Lädt…
+                </TableCell>
+              </TableRow>
+            )}
+            {!ladend && liste.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center text-muted-foreground">
+                  Noch keine Einträge.
+                </TableCell>
+              </TableRow>
+            )}
+            {liste.map((k) => (
+              <TableRow key={k.id}>
+                <TableCell>{k.name}</TableCell>
+                <TableCell className="font-mono text-sm">{k.code ?? '–'}</TableCell>
+                <TableCell>{k.aktiv ? 'Aktiv' : 'Deaktiviert'}</TableCell>
+                <TableCell className="text-right">
+                  <Button variant="outline" size="sm" onClick={() => aktivToggeln(k)}>
+                    {k.aktiv ? 'Deaktivieren' : 'Aktivieren'}
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   );
 }

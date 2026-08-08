@@ -73,9 +73,23 @@ export interface Artikel {
   breiteMm: string | null;
   hoeheMm: string | null;
   mindestbestand: string | null;
+  // Nur bei firma.artikelnummernSchema === 'kategorie' gesetzt/relevant,
+  // siehe artikelkategorie.entity.ts. Nach dem Anlegen nicht mehr aenderbar.
+  hauptgruppeId: string | null;
+  untergruppeId: string | null;
 }
 
-export type BelegTyp = 'angebot' | 'auftragsbestaetigung' | 'lieferschein' | 'rechnung';
+export type ArtikelkategorieTyp = 'haupt' | 'unter';
+
+export interface Artikelkategorie {
+  id: string;
+  typ: ArtikelkategorieTyp;
+  name: string;
+  code: string | null;
+  aktiv: boolean;
+}
+
+export type BelegTyp = 'angebot' | 'auftragsbestaetigung' | 'lieferschein' | 'rechnung' | 'proforma' | 'abschlag';
 export type BelegStatus = 'offen' | 'teilweise_weitergefuehrt' | 'abgeschlossen' | 'storniert';
 
 export interface BelegPosition {
