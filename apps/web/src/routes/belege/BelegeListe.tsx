@@ -9,7 +9,8 @@ import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { PageHeading } from '@/components/ui/page-heading';
-import { api, ApiError } from '@/lib/api';
+import { FehlerAnzeige } from '@/components/ui/fehler-anzeige';
+import { api } from '@/lib/api';
 import { Beleg, BelegTyp, Kunde } from '@/lib/types';
 import { BELEG_STATUS_LABEL, BELEG_TYP_LABEL_PLURAL, BELEG_TYP_PFAD } from '@/lib/beleg-labels';
 
@@ -23,7 +24,7 @@ function BelegeListeGeneric({ belegTyp }: { belegTyp: BelegTyp }) {
   const pfad = BELEG_TYP_PFAD[belegTyp];
   const [belege, setBelege] = useState<Beleg[]>([]);
   const [ladend, setLadend] = useState(true);
-  const [ladeFehler, setLadeFehler] = useState<string | null>(null);
+  const [ladeFehler, setLadeFehler] = useState<unknown>(null);
 
   useEffect(() => {
     setLadend(true);
@@ -31,7 +32,7 @@ function BelegeListeGeneric({ belegTyp }: { belegTyp: BelegTyp }) {
     api
       .get<Beleg[]>(`/belege/${belegTyp}`)
       .then(setBelege)
-      .catch((err) => setLadeFehler(err instanceof ApiError ? err.message : 'Belege konnten nicht geladen werden.'))
+      .catch(setLadeFehler)
       .finally(() => setLadend(false));
   }, [belegTyp]);
 
@@ -48,7 +49,7 @@ function BelegeListeGeneric({ belegTyp }: { belegTyp: BelegTyp }) {
         }
       />
 
-      {ladeFehler && <p className="text-sm text-destructive">{ladeFehler}</p>}
+      {ladeFehler ? <FehlerAnzeige error={ladeFehler} fallback="Belege konnten nicht geladen werden." /> : null}
 
       <Table>
         <TableHeader>

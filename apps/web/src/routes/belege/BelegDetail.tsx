@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { SearchCreateDropdown } from '@/components/ui/search-create-dropdown';
 import { PageHeading } from '@/components/ui/page-heading';
+import { FehlerAnzeige } from '@/components/ui/fehler-anzeige';
 import { api, ApiError } from '@/lib/api';
 import { Artikel, Beleg, BelegPosition, BelegTyp, Firma, Kunde, Lager, Steuersatz } from '@/lib/types';
 import {
@@ -84,8 +85,8 @@ function BelegDetailGeneric({ belegTyp }: { belegTyp: BelegTyp }) {
 
   const [beleg, setBeleg] = useState<Beleg | null>(null);
   const [ladend, setLadend] = useState(!istNeu);
-  const [ladeFehler, setLadeFehler] = useState<string | null>(null);
-  const [aktionFehler, setAktionFehler] = useState<string | null>(null);
+  const [ladeFehler, setLadeFehler] = useState<unknown>(null);
+  const [aktionFehler, setAktionFehler] = useState<unknown>(null);
 
   const [kundeId, setKundeId] = useState<string | null>(null);
   const [belegdatum, setBelegdatum] = useState(() => new Date().toISOString().slice(0, 10));
@@ -127,7 +128,7 @@ function BelegDetailGeneric({ belegTyp }: { belegTyp: BelegTyp }) {
     try {
       setBeleg(await api.get<Beleg>(`/belege/beleg/${id}`));
     } catch (err) {
-      setLadeFehler(err instanceof ApiError ? err.message : 'Beleg konnte nicht geladen werden.');
+      setLadeFehler(err);
     } finally {
       setLadend(false);
     }
@@ -183,7 +184,7 @@ function BelegDetailGeneric({ belegTyp }: { belegTyp: BelegTyp }) {
       });
       navigate(`/${pfad}/${neu.id}`, { replace: true });
     } catch (err) {
-      setAktionFehler(err instanceof ApiError ? err.message : 'Speichern fehlgeschlagen.');
+      setAktionFehler(err);
     } finally {
       setSpeichernd(false);
     }
@@ -224,7 +225,7 @@ function BelegDetailGeneric({ belegTyp }: { belegTyp: BelegTyp }) {
       const neuerBeleg = await api.post<Beleg>(`/belege/beleg/${beleg.id}/uebernehmen`, body);
       navigate(`/${BELEG_TYP_PFAD[nachfolgerTyp]}/${neuerBeleg.id}`);
     } catch (err) {
-      setAktionFehler(err instanceof ApiError ? err.message : err instanceof Error ? err.message : 'Übernehmen fehlgeschlagen.');
+      setAktionFehler(err);
     } finally {
       setUebernehmenLaeuft(false);
     }
@@ -269,7 +270,7 @@ function BelegDetailGeneric({ belegTyp }: { belegTyp: BelegTyp }) {
       });
       navigate(`/${BELEG_TYP_PFAD[zusatzbelegZielTyp]}/${neuerBeleg.id}`);
     } catch (err) {
-      setAktionFehler(err instanceof ApiError ? err.message : err instanceof Error ? err.message : 'Erzeugen fehlgeschlagen.');
+      setAktionFehler(err);
     } finally {
       setZusatzbelegLaeuft(false);
     }
@@ -282,7 +283,7 @@ function BelegDetailGeneric({ belegTyp }: { belegTyp: BelegTyp }) {
       await api.post(`/belege/beleg/${beleg.id}/stornieren`);
       await laden();
     } catch (err) {
-      setAktionFehler(err instanceof ApiError ? err.message : 'Stornieren fehlgeschlagen.');
+      setAktionFehler(err);
     }
   }
 
@@ -293,7 +294,7 @@ function BelegDetailGeneric({ belegTyp }: { belegTyp: BelegTyp }) {
       await api.post(`/belege/beleg/${beleg.id}/festschreiben`);
       await laden();
     } catch (err) {
-      setAktionFehler(err instanceof ApiError ? err.message : 'Festschreiben fehlgeschlagen.');
+      setAktionFehler(err);
     }
   }
 
@@ -303,7 +304,7 @@ function BelegDetailGeneric({ belegTyp }: { belegTyp: BelegTyp }) {
   );
 
   if (ladend) return <p className="text-sm text-muted-foreground">Lädt…</p>;
-  if (ladeFehler) return <p className="text-sm text-destructive">{ladeFehler}</p>;
+  if (ladeFehler) return <FehlerAnzeige error={ladeFehler} fallback="Beleg konnte nicht geladen werden." />;
 
   return (
     <div className="space-y-4">
@@ -321,7 +322,7 @@ function BelegDetailGeneric({ belegTyp }: { belegTyp: BelegTyp }) {
         </div>
       </div>
 
-      {aktionFehler && <p className="text-sm text-destructive">{aktionFehler}</p>}
+      {aktionFehler ? <FehlerAnzeige error={aktionFehler} fallback="Aktion fehlgeschlagen." /> : null}
 
       {istNeu ? (
         <form onSubmit={speichern} className="space-y-4">

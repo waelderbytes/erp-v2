@@ -8,6 +8,12 @@ export class ApiError extends Error {
   constructor(
     message: string,
     public status: number,
+    // Nur gesetzt, wenn Backend-Debug-Modus an ist (ENV DEBUG_ERRORS=true,
+    // siehe all-exceptions.filter.ts) UND es sich um einen unerwarteten
+    // 500er handelte - damit die UI die Details direkt anzeigen kann, ohne
+    // dass man in die Browser-Konsole/das Server-Log schauen muss.
+    public debugName?: string,
+    public debugStack?: string[],
   ) {
     super(message);
     this.name = 'ApiError';
@@ -45,13 +51,17 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (!response.ok) {
     let message = `Fehler ${response.status}`;
+    let debugName: string | undefined;
+    let debugStack: string[] | undefined;
     try {
       const body = await response.json();
       message = body.message ?? message;
+      debugName = body.name;
+      debugStack = body.stack;
     } catch {
       // Antwort war kein JSON - Standardmeldung behalten.
     }
-    throw new ApiError(Array.isArray(message) ? message.join(', ') : message, response.status);
+    throw new ApiError(Array.isArray(message) ? message.join(', ') : message, response.status, debugName, debugStack);
   }
 
   if (response.status === 204) {
