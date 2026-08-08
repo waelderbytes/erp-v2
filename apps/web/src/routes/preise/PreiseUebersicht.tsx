@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { api, ApiError } from '@/lib/api';
 import { Artikel, Artikelpreis, Kunde } from '@/lib/types';
+import { PageHeading } from '@/components/ui/page-heading';
 
 export function PreiseUebersicht() {
   const [artikelListe, setArtikelListe] = useState<Artikel[]>([]);
@@ -51,7 +52,7 @@ export function PreiseUebersicht() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Preise</h1>
+        <PageHeading eyebrow="Warenwirtschaft" title="Preise" />
         <Dialog open={dialogOffen} onOpenChange={setDialogOffen}>
           <DialogTrigger asChild>
             <Button disabled={!artikelId}>

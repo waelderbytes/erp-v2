@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { api, ApiError } from '@/lib/api';
 import { Lieferant } from '@/lib/types';
+import { PageHeading } from '@/components/ui/page-heading';
 
 export function LieferantenListe() {
   const [lieferanten, setLieferanten] = useState<Lieferant[]>([]);
@@ -42,7 +43,7 @@ export function LieferantenListe() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Lieferanten</h1>
+        <PageHeading eyebrow="Warenwirtschaft" title="Lieferanten" />
         <Dialog open={dialogOffen} onOpenChange={setDialogOffen}>
           <DialogTrigger asChild>
             <Button>

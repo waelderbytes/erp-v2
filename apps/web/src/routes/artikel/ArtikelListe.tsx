@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { cn } from '@/lib/utils';
 import { api, ApiError } from '@/lib/api';
 import { Artikel } from '@/lib/types';
+import { PageHeading } from '@/components/ui/page-heading';
 
 type SortSpalte = 'artikelnummer' | 'bezeichnung' | 'artikelart' | 'hersteller';
 
@@ -83,7 +84,7 @@ export function ArtikelListe() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Artikel</h1>
+        <PageHeading eyebrow="Warenwirtschaft" title="Artikel" />
         {/* Kein Dialog mehr - "Neuer Artikel" fuehrt auf denselben Tab-Screen wie
             das Bearbeiten (siehe ArtikelDetail.tsx), Muster aus ERP v1
             uebernommen: erster Tab "Stammdaten" speichert, danach schalten

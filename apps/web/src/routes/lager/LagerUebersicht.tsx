@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { api, ApiError } from '@/lib/api';
 import { Artikel, Lager, Lagerbestand } from '@/lib/types';
+import { PageHeading } from '@/components/ui/page-heading';
 
 export function LagerUebersicht() {
   const [lager, setLager] = useState<Lager[]>([]);
@@ -38,7 +39,7 @@ export function LagerUebersicht() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Lager</h1>
+        <PageHeading eyebrow="Warenwirtschaft" title="Lager" />
         <Dialog open={dialogOffen} onOpenChange={setDialogOffen}>
           <DialogTrigger asChild>
             <Button>

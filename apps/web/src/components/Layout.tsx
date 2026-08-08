@@ -88,8 +88,10 @@ export function Layout() {
                     to={to}
                     className={({ isActive }) =>
                       cn(
-                        'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                        isActive ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:bg-accent hover:text-accent-foreground',
+                        'flex items-center gap-2 rounded-md border-l-2 px-3 py-2 text-sm font-medium transition-colors',
+                        isActive
+                          ? 'border-l-primary bg-primary text-primary-foreground'
+                          : 'border-l-transparent text-foreground/80 hover:bg-accent hover:text-accent-foreground',
                       )
                     }
                   >

@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { api, ApiError } from '@/lib/api';
 import { Kunde } from '@/lib/types';
+import { PageHeading } from '@/components/ui/page-heading';
 
 function kundenName(k: Kunde): string {
   return k.typ === 'firma' ? (k.firmenname ?? '–') : `${k.vorname ?? ''} ${k.nachname ?? ''}`.trim() || '–';
@@ -47,7 +48,7 @@ export function KundenListe() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Kunden</h1>
+        <PageHeading eyebrow="Warenwirtschaft" title="Kunden" />
         <Dialog open={dialogOffen} onOpenChange={setDialogOffen}>
           <DialogTrigger asChild>
             <Button>

@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { api, ApiError } from '@/lib/api';
 import { Artikel, Bestellung, Lager, Lieferant } from '@/lib/types';
+import { PageHeading } from '@/components/ui/page-heading';
 
 const STATUS_LABEL: Record<string, string> = {
   offen: 'Offen',
@@ -58,7 +59,7 @@ export function BestellungenListe() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Bestellungen</h1>
+        <PageHeading eyebrow="Warenwirtschaft" title="Bestellungen" />
         <Dialog open={dialogOffen} onOpenChange={setDialogOffen}>
           <DialogTrigger asChild>
             <Button disabled={lieferanten.length === 0 || artikel.length === 0}>

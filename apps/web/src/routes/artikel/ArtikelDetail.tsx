@@ -128,8 +128,10 @@ export function ArtikelDetail() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          {artikel && <div className="font-mono text-xs text-muted-foreground">{artikel.artikelnummer}</div>}
-          <h1 className="text-xl font-semibold">{istNeu ? 'Neuer Artikel' : artikel!.bezeichnung}</h1>
+          {artikel && (
+            <div className="font-mono text-xs uppercase tracking-wide text-muted-foreground">{artikel.artikelnummer}</div>
+          )}
+          <h1 className="text-2xl font-bold tracking-tight">{istNeu ? 'Neuer Artikel' : artikel!.bezeichnung}</h1>
         </div>
       </div>
 

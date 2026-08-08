@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { api, ApiError } from '@/lib/api';
 import { ArbeitszeitHeute, ZeitbuchungTyp } from '@/lib/types';
+import { PageHeading } from '@/components/ui/page-heading';
 
 // Web-UI fuer die eigene Zeiterfassung (Login per E-Mail/Passwort, siehe
 // RequireAuth). Das separate Kiosk-Wandtablet (Personalnummer+PIN, kein
@@ -67,7 +68,7 @@ export function ZeiterfassungUebersicht() {
 
   return (
     <div className="max-w-md space-y-4">
-      <h1 className="text-xl font-semibold">Zeiterfassung</h1>
+      <PageHeading eyebrow="Zeiterfassung" title="Zeiterfassung" />
 
       {fehler && <p className="text-sm text-destructive">{fehler}</p>}
 

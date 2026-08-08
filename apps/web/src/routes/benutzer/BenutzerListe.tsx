@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { api, ApiError } from '@/lib/api';
 import { Benutzer, Rolle } from '@/lib/types';
+import { PageHeading } from '@/components/ui/page-heading';
 
 function benutzerName(b: Benutzer): string {
   return `${b.vorname ?? ''} ${b.nachname ?? ''}`.trim() || '–';
@@ -41,7 +42,7 @@ export function BenutzerListe() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Benutzer</h1>
+        <PageHeading eyebrow="Verwaltung" title="Benutzer" />
         <Dialog open={anlegenOffen} onOpenChange={setAnlegenOffen}>
           <DialogTrigger asChild>
             <Button>

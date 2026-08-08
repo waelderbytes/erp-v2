@@ -14,11 +14,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { api, ApiError } from '@/lib/api';
 import { Firma, Nummernkreis, Steuersatz } from '@/lib/types';
+import { PageHeading } from '@/components/ui/page-heading';
 
 export function StammdatenPage() {
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Stammdaten / System-Einstellungen</h1>
+      <PageHeading eyebrow="Verwaltung" title="Stammdaten / System-Einstellungen" />
       <Tabs defaultValue="firma">
         <TabsList>
           <TabsTrigger value="firma">Firma</TabsTrigger>
