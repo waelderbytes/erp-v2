@@ -75,6 +75,41 @@ export interface Artikel {
   mindestbestand: string | null;
 }
 
+export type BelegTyp = 'angebot' | 'auftragsbestaetigung' | 'lieferschein' | 'rechnung';
+export type BelegStatus = 'offen' | 'teilweise_weitergefuehrt' | 'abgeschlossen' | 'storniert';
+
+export interface BelegPosition {
+  id: string;
+  belegId: string;
+  positionNr: number;
+  artikelId: string | null;
+  artikel?: Artikel;
+  bezeichnung: string;
+  menge: string;
+  weitergefuehrteMenge: string;
+  einheitCode: string | null;
+  einzelpreis: string;
+  steuersatzId: string | null;
+  steuersatz?: Steuersatz;
+  steuersatzProzent: string;
+  referenzPositionId: string | null;
+}
+
+export interface Beleg {
+  id: string;
+  belegTyp: BelegTyp;
+  belegnummer: string;
+  kundeId: string;
+  kunde?: Kunde;
+  status: BelegStatus;
+  belegdatum: string;
+  referenzBelegId: string | null;
+  referenzBeleg?: Beleg;
+  festgeschrieben: boolean;
+  kommentar: string | null;
+  positionen?: BelegPosition[];
+}
+
 export interface ArtikelUebersetzung {
   id: string;
   artikelId: string;

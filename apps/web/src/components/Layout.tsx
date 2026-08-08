@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Package, Users, Truck, Warehouse, ShoppingCart, Tags, LogOut, Clock, UserCog, Settings } from 'lucide-react';
+import { Package, Users, Truck, Warehouse, ShoppingCart, Tags, LogOut, Clock, UserCog, Settings, FileText, ClipboardCheck, PackageCheck, Receipt } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getCurrentUser, logout } from '@/lib/auth';
 
@@ -35,6 +35,17 @@ const navigationGruppen: NavGroup[] = [
       { to: '/lager', label: 'Lager', icon: Warehouse },
       { to: '/bestellungen', label: 'Bestellungen', icon: ShoppingCart },
       { to: '/preise', label: 'Preise', icon: Tags },
+    ],
+  },
+  {
+    // Modul Belegkette (08.08.2026, siehe module-uebersicht.md) - eigene
+    // modul_key 'verkauf'-Berechtigung im Backend, hier nur Navigation.
+    titel: 'Vertrieb',
+    items: [
+      { to: '/angebote', label: 'Angebote', icon: FileText },
+      { to: '/auftraege', label: 'Aufträge', icon: ClipboardCheck },
+      { to: '/lieferscheine', label: 'Lieferscheine', icon: PackageCheck },
+      { to: '/rechnungen', label: 'Rechnungen', icon: Receipt },
     ],
   },
   {
