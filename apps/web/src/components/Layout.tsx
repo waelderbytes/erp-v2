@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Package, Users, Truck, Warehouse, ShoppingCart, Tags, LogOut, Clock, UserCog, Settings, FileText, ClipboardCheck, PackageCheck, Receipt } from 'lucide-react';
+import { Package, Users, Truck, Warehouse, ShoppingCart, Tags, LogOut, Clock, UserCog, Settings, FileText, ClipboardCheck, PackageCheck, Receipt, FileClock, Banknote } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getCurrentUser, logout } from '@/lib/auth';
 
@@ -46,6 +46,10 @@ const navigationGruppen: NavGroup[] = [
       { to: '/auftraege', label: 'Aufträge', icon: ClipboardCheck },
       { to: '/lieferscheine', label: 'Lieferscheine', icon: PackageCheck },
       { to: '/rechnungen', label: 'Rechnungen', icon: Receipt },
+      // Zusatzbelege (08.08.2026, Kundenforderung) - entstehen aus einer
+      // Auftragsbestaetigung, siehe BELEG_ZUSATZ_TYPEN in beleg-labels.ts.
+      { to: '/proformarechnungen', label: 'Proformarechnungen', icon: FileClock },
+      { to: '/abschlagsrechnungen', label: 'Abschlagsrechnungen', icon: Banknote },
     ],
   },
   {

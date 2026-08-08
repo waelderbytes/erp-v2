@@ -12,8 +12,22 @@ import { PreiseUebersicht } from '@/routes/preise/PreiseUebersicht';
 import { BenutzerListe } from '@/routes/benutzer/BenutzerListe';
 import { ZeiterfassungUebersicht } from '@/routes/zeiterfassung/ZeiterfassungUebersicht';
 import { StammdatenPage } from '@/routes/stammdaten/StammdatenPage';
-import { AngeboteListe, AuftraegeListe, LieferscheineListe, RechnungenListe } from '@/routes/belege/BelegeListe';
-import { AngebotDetail, AuftragDetail, LieferscheinDetail, RechnungDetail } from '@/routes/belege/BelegDetail';
+import {
+  AbschlagsrechnungenListe,
+  AngeboteListe,
+  AuftraegeListe,
+  LieferscheineListe,
+  ProformarechnungenListe,
+  RechnungenListe,
+} from '@/routes/belege/BelegeListe';
+import {
+  AbschlagDetail,
+  AngebotDetail,
+  AuftragDetail,
+  LieferscheinDetail,
+  ProformaDetail,
+  RechnungDetail,
+} from '@/routes/belege/BelegDetail';
 
 export default function App() {
   return (
@@ -49,6 +63,10 @@ export default function App() {
             <Route path="lieferscheine/:id" element={<LieferscheinDetail />} />
             <Route path="rechnungen" element={<RechnungenListe />} />
             <Route path="rechnungen/:id" element={<RechnungDetail />} />
+            <Route path="proformarechnungen" element={<ProformarechnungenListe />} />
+            <Route path="proformarechnungen/:id" element={<ProformaDetail />} />
+            <Route path="abschlagsrechnungen" element={<AbschlagsrechnungenListe />} />
+            <Route path="abschlagsrechnungen/:id" element={<AbschlagDetail />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

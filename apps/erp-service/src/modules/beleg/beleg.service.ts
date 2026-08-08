@@ -11,31 +11,58 @@ import { LagerbewegungService } from '../lager/lagerbewegung.service';
 import { BelegAnlegenDto } from './dto/beleg-anlegen.dto';
 import { BelegPositionEingabeDto } from './dto/beleg-position-eingabe.dto';
 import { BelegUebernehmenDto } from './dto/beleg-uebernehmen.dto';
+import { BelegZusatzbelegDto } from './dto/beleg-zusatzbeleg.dto';
 
 // Reihenfolge der Verkaufs-Belegkette. NUR fuer die "Uebernehmen"-Aktion
 // relevant - jeder Typ kann trotzdem auch direkt/frei angelegt werden (siehe
 // anlegen()), nicht zwingend ueber die Kette von vorne. Bewusst eigenstaendig
 // entworfen, NICHT aus v1 uebernommen (Nutzerentscheidung 08.08.2026) - v1
 // hatte hier zusaetzlich Anfrage/Bestellung/Wareneingang (Einkaufskette) im
-// selben Modell und "zusatz_nachfolger" (Proforma/Abschlag), beides bewusst
-// nicht mitgenommen: Einkauf ist in erp-v2 ein eigenes, bereits fertiges
-// Modul (einkauf.service.ts), Proforma/Abschlag folgen erst, wenn ein
-// konkreter Bedarf danach entsteht.
+// selben Modell. Einkauf ist in erp-v2 bewusst ein eigenes, bereits fertiges
+// Modul (einkauf.service.ts) geblieben.
+//
+// 'proforma'/'abschlag' sind ABSICHTLICH NICHT Teil dieser Kette (null =
+// kein Nachfolger via uebernehmen()) - sie entstehen ueber die eigene,
+// separate Methode zusatzbeleg() (Nutzerforderung 08.08.2026). Grund: es
+// sind unverbindliche/ergaenzende Kopien einer Auftragsbestaetigung
+// (Proformarechnung z.B. fuer Zoll/Vorkasse-Ankuendigung, Abschlagsrechnung
+// fuer Teilzahlungen VOR der eigentlichen Lieferung) - sie duerfen die
+// "echte" Lieferschein/Rechnung-Kette (Menge/Status) nicht beeinflussen.
+// Feldschema-Idee an v1s zusatz_nachfolger angelehnt, der Ablauf (eigene
+// Methode statt generischem uebernehmen(), keine Restmengen-Sperre) ist
+// bewusst neu, nicht aus v1 uebernommen.
 const BELEG_KETTE: Record<BelegTyp, BelegTyp | null> = {
   angebot: 'auftragsbestaetigung',
   auftragsbestaetigung: 'lieferschein',
   lieferschein: 'rechnung',
   rechnung: null,
+  proforma: null,
+  abschlag: null,
 };
 
-const BELEG_TYPEN: BelegTyp[] = ['angebot', 'auftragsbestaetigung', 'lieferschein', 'rechnung'];
+const BELEG_TYPEN: BelegTyp[] = ['angebot', 'auftragsbestaetigung', 'lieferschein', 'rechnung', 'proforma', 'abschlag'];
 
 const NUMMERNKREIS_JE_TYP: Record<BelegTyp, string> = {
   angebot: 'angebote',
   auftragsbestaetigung: 'auftragsbestaetigungen',
   lieferschein: 'lieferscheine',
   rechnung: 'rechnungen',
+  proforma: 'proformarechnungen',
+  abschlag: 'abschlagsrechnungen',
 };
+
+// Nur aus diesem Belegtyp heraus koennen Zusatzbelege (Proforma/Abschlag)
+// erzeugt werden - analog v1s auftragsbestaetigung.zusatz_nachfolger, hier
+// aber als eigene Konstante statt generischem Konfigurationsobjekt.
+const ZUSATZBELEG_QUELLE: BelegTyp = 'auftragsbestaetigung';
+const ZUSATZBELEG_TYPEN: BelegTyp[] = ['proforma', 'abschlag'];
+
+// RECHNUNGSARTIGE_TYPEN aus v1 (nur Feldschema-Idee, siehe Modul-Kommentar):
+// 'abschlag' ist eine echte, GoBD-relevante (Anzahlungs-)Rechnung und darf
+// daher wie 'rechnung' festgeschrieben werden. 'proforma' ausdruecklich
+// NICHT - sie ist rein informativ, keine Zahlungsaufforderung mit
+// umsatzsteuerlicher Wirkung (siehe festschreiben() unten).
+const FESTSCHREIBBARE_TYPEN: BelegTyp[] = ['rechnung', 'abschlag'];
 
 // referenz_typ-Konstante fuer lagerbewegung.referenz_typ, analog
 // REFERENZ_TYP_BESTELLPOSITION in einkauf.service.ts.
@@ -306,6 +333,77 @@ export class BelegService {
       .execute();
   }
 
+  // Erzeugt einen Zusatzbeleg (Proformarechnung/Abschlagsrechnung) aus einer
+  // Auftragsbestaetigung - bewusst KEIN Aufruf von uebernehmen()/
+  // aktualisiereBelegStatus(): die Quellposition wird NICHT als
+  // "weitergefuehrt" markiert und der Status der Auftragsbestaetigung
+  // bleibt unveraendert (siehe Modul-Kommentar oben zu ZUSATZBELEG_TYPEN).
+  // Deshalb auch keine Restmengen-Pruefung/kein Row-Lock auf die
+  // Quellposition noetig - mehrere Proforma-/Abschlagsrechnungen (z. B.
+  // Teilzahlungsraten) koennen unabhaengig voneinander bis zur vollen
+  // urspruenglichen Menge erzeugt werden.
+  async zusatzbeleg(belegId: string, dto: BelegZusatzbelegDto): Promise<Beleg> {
+    if (!ZUSATZBELEG_TYPEN.includes(dto.zielTyp)) {
+      throw new BadRequestException(`Unbekannter Zusatzbeleg-Typ '${dto.zielTyp}'.`);
+    }
+    const quelle = await this.dataSource.getRepository(Beleg).findOneBy({ id: belegId });
+    if (!quelle) {
+      throw new NotFoundException('Beleg nicht gefunden.');
+    }
+    if (quelle.belegTyp !== ZUSATZBELEG_QUELLE) {
+      throw new BadRequestException(
+        `Zusatzbelege (Proforma/Abschlag) koennen nur aus einer Auftragsbestaetigung erzeugt werden, nicht aus '${quelle.belegTyp}'.`,
+      );
+    }
+    if (quelle.status === 'storniert') {
+      throw new ConflictException('Aus einer stornierten Auftragsbestaetigung kann kein Zusatzbeleg erzeugt werden.');
+    }
+
+    const belegnummer = await this.nummernkreisService.issueNextNumber(NUMMERNKREIS_JE_TYP[dto.zielTyp]);
+
+    return this.dataSource.transaction(async (manager) => {
+      const neuePositionen: Partial<BelegPosition>[] = [];
+      let positionNr = 1;
+
+      for (const ziel of dto.positionen) {
+        const quellPos = await manager.findOneBy(BelegPosition, { id: ziel.positionId, belegId });
+        if (!quellPos) {
+          throw new NotFoundException(`Position '${ziel.positionId}' gehoert nicht zu diesem Beleg.`);
+        }
+        if (Number(ziel.menge) > Number(quellPos.menge)) {
+          throw new BadRequestException(
+            `Angeforderte Menge (${ziel.menge}) uebersteigt die urspruengliche Menge dieser Position (${quellPos.menge}).`,
+          );
+        }
+
+        neuePositionen.push({
+          positionNr: positionNr++,
+          artikelId: quellPos.artikelId,
+          bezeichnung: quellPos.bezeichnung,
+          menge: ziel.menge,
+          weitergefuehrteMenge: '0',
+          einheitCode: quellPos.einheitCode,
+          einzelpreis: quellPos.einzelpreis,
+          steuersatzId: quellPos.steuersatzId,
+          steuersatzProzent: quellPos.steuersatzProzent,
+          referenzPositionId: quellPos.id,
+        });
+      }
+
+      const neuerBeleg = manager.create(Beleg, {
+        belegTyp: dto.zielTyp,
+        belegnummer,
+        kundeId: quelle.kundeId,
+        referenzBelegId: quelle.id,
+        positionen: neuePositionen as BelegPosition[],
+      });
+      return manager.save(neuerBeleg);
+      // Bewusst KEIN bucheWarenausgang() (Proforma/Abschlag sind Rechnungs-,
+      // keine Lieferdokumente) und KEIN aktualisiereBelegStatus(belegId) auf
+      // die Quelle - siehe Methodenkommentar oben.
+    });
+  }
+
   async stornieren(id: string): Promise<Beleg> {
     const beleg = await this.dataSource.getRepository(Beleg).findOneBy({ id });
     if (!beleg) {
@@ -325,13 +423,18 @@ export class BelegService {
   // Erster, bewusst einfacher Wurf ohne PDF-Kopplung (siehe Nutzerentscheidung
   // 08.08.2026: erst Datenmodell/Workflow, PDF als Folgeschritt) - spaeter soll
   // dies automatisch beim ersten PDF-Abruf einer Rechnung passieren, analog v1.
+  // Seit 08.08.2026 auch 'abschlag' festschreibbar (siehe FESTSCHREIBBARE_TYPEN
+  // oben) - eine Abschlagsrechnung ist eine echte GoBD-relevante Rechnung.
+  // 'proforma' ausdruecklich NICHT.
   async festschreiben(id: string): Promise<Beleg> {
     const beleg = await this.dataSource.getRepository(Beleg).findOneBy({ id });
     if (!beleg) {
       throw new NotFoundException('Beleg nicht gefunden.');
     }
-    if (beleg.belegTyp !== 'rechnung') {
-      throw new BadRequestException('Nur Rechnungen koennen festgeschrieben werden.');
+    if (!FESTSCHREIBBARE_TYPEN.includes(beleg.belegTyp)) {
+      throw new BadRequestException(
+        `'${beleg.belegTyp}' kann nicht festgeschrieben werden. Erlaubt: ${FESTSCHREIBBARE_TYPEN.join(', ')}.`,
+      );
     }
     if (beleg.status === 'storniert') {
       throw new ConflictException('Ein stornierter Beleg kann nicht festgeschrieben werden.');

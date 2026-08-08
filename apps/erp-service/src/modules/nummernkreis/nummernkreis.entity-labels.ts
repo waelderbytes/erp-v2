@@ -10,4 +10,6 @@ export const NUMMERNKREIS_DEFAULT_LABELS: Record<string, string> = {
   auftragsbestaetigungen: 'Auftragsbestätigungen',
   lieferscheine: 'Lieferscheine',
   rechnungen: 'Rechnungen',
+  proformarechnungen: 'Proformarechnungen',
+  abschlagsrechnungen: 'Abschlagsrechnungen',
 };

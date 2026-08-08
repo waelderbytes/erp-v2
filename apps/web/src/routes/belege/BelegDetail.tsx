@@ -16,7 +16,16 @@ import { SearchCreateDropdown } from '@/components/ui/search-create-dropdown';
 import { PageHeading } from '@/components/ui/page-heading';
 import { api, ApiError } from '@/lib/api';
 import { Artikel, Beleg, BelegPosition, BelegTyp, Firma, Kunde, Lager, Steuersatz } from '@/lib/types';
-import { BELEG_NACHFOLGER, BELEG_STATUS_LABEL, BELEG_TYP_LABEL, BELEG_TYP_PFAD } from '@/lib/beleg-labels';
+import {
+  BELEG_FESTSCHREIBBAR,
+  BELEG_NACHFOLGER,
+  BELEG_STATUS_LABEL,
+  BELEG_TYP_LABEL,
+  BELEG_TYP_LABEL_PLURAL,
+  BELEG_TYP_PFAD,
+  BELEG_ZUSATZ_TYPEN,
+  ZUSATZBELEG_QUELLE_TYP,
+} from '@/lib/beleg-labels';
 
 function kundenName(k?: Kunde): string {
   if (!k) return '–';
@@ -218,6 +227,51 @@ function BelegDetailGeneric({ belegTyp }: { belegTyp: BelegTyp }) {
       setAktionFehler(err instanceof ApiError ? err.message : err instanceof Error ? err.message : 'Übernehmen fehlgeschlagen.');
     } finally {
       setUebernehmenLaeuft(false);
+    }
+  }
+
+  // --- Zusatzbeleg (Proformarechnung/Abschlagsrechnung) --------------
+  // Nur auf der Auftragsbestaetigung-Detailseite relevant (siehe
+  // ZUSATZBELEG_QUELLE_TYP) - bewusst eigener Dialog statt Wiederverwendung
+  // des Uebernehmen-Dialogs: hier gilt keine Restmengen-Sperre (mehrere
+  // Proforma-/Abschlagsrechnungen bis zur vollen urspruenglichen Menge
+  // moeglich), siehe beleg.service.ts::zusatzbeleg().
+  const [zusatzbelegOffen, setZusatzbelegOffen] = useState(false);
+  const [zusatzbelegZielTyp, setZusatzbelegZielTyp] = useState<BelegTyp>('proforma');
+  const [zusatzbelegMengen, setZusatzbelegMengen] = useState<Record<string, string>>({});
+  const [zusatzbelegLaeuft, setZusatzbelegLaeuft] = useState(false);
+
+  function zusatzbelegOeffnen(zielTyp: BelegTyp) {
+    const init: Record<string, string> = {};
+    (beleg?.positionen ?? []).forEach((p) => {
+      init[p.id] = p.menge;
+    });
+    setZusatzbelegZielTyp(zielTyp);
+    setZusatzbelegMengen(init);
+    setAktionFehler(null);
+    setZusatzbelegOffen(true);
+  }
+
+  async function zusatzbelegBestaetigen() {
+    if (!beleg) return;
+    setZusatzbelegLaeuft(true);
+    setAktionFehler(null);
+    try {
+      const positionen = Object.entries(zusatzbelegMengen)
+        .filter(([, menge]) => Number(menge) > 0)
+        .map(([positionId, menge]) => ({ positionId, menge }));
+      if (positionen.length === 0) {
+        throw new Error('Mindestens eine Position mit Menge > 0 auswählen.');
+      }
+      const neuerBeleg = await api.post<Beleg>(`/belege/beleg/${beleg.id}/zusatzbeleg`, {
+        zielTyp: zusatzbelegZielTyp,
+        positionen,
+      });
+      navigate(`/${BELEG_TYP_PFAD[zusatzbelegZielTyp]}/${neuerBeleg.id}`);
+    } catch (err) {
+      setAktionFehler(err instanceof ApiError ? err.message : err instanceof Error ? err.message : 'Erzeugen fehlgeschlagen.');
+    } finally {
+      setZusatzbelegLaeuft(false);
     }
   }
 
@@ -500,11 +554,18 @@ function BelegDetailGeneric({ belegTyp }: { belegTyp: BelegTyp }) {
               </CardContent>
             </Card>
 
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {nachfolgerTyp && beleg.status !== 'storniert' && (
                 <Button onClick={uebernehmenOeffnen}>Nach {BELEG_TYP_LABEL[nachfolgerTyp]} übernehmen</Button>
               )}
-              {belegTyp === 'rechnung' && !beleg.festgeschrieben && beleg.status !== 'storniert' && (
+              {belegTyp === ZUSATZBELEG_QUELLE_TYP &&
+                beleg.status !== 'storniert' &&
+                BELEG_ZUSATZ_TYPEN.map((zt) => (
+                  <Button key={zt} variant="outline" onClick={() => zusatzbelegOeffnen(zt)}>
+                    Als {BELEG_TYP_LABEL[zt]} erzeugen
+                  </Button>
+                ))}
+              {BELEG_FESTSCHREIBBAR.includes(belegTyp) && !beleg.festgeschrieben && beleg.status !== 'storniert' && (
                 <Button variant="outline" onClick={festschreiben}>
                   Als endgültig festschreiben
                 </Button>
@@ -563,6 +624,41 @@ function BelegDetailGeneric({ belegTyp }: { belegTyp: BelegTyp }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={zusatzbelegOffen} onOpenChange={setZusatzbelegOffen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Als {BELEG_TYP_LABEL[zusatzbelegZielTyp]} erzeugen</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Unverbindliche/ergänzende Kopie - beeinflusst weder die bereits gelieferte/fakturierte Menge noch den
+              Status dieser Auftragsbestätigung. Mehrere {BELEG_TYP_LABEL_PLURAL[zusatzbelegZielTyp]} pro
+              Position sind möglich (z. B. Teilzahlungsraten).
+            </p>
+            {(beleg?.positionen ?? []).map((p) => (
+              <div key={p.id} className="flex items-center justify-between gap-3">
+                <div className="text-sm">
+                  {p.bezeichnung} <span className="text-xs text-muted-foreground">(bestellt: {p.menge})</span>
+                </div>
+                <Input
+                  className="w-28"
+                  value={zusatzbelegMengen[p.id] ?? '0'}
+                  onChange={(e) => setZusatzbelegMengen((m) => ({ ...m, [p.id]: e.target.value }))}
+                />
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setZusatzbelegOffen(false)}>
+              Abbrechen
+            </Button>
+            <Button onClick={zusatzbelegBestaetigen} disabled={zusatzbelegLaeuft}>
+              {zusatzbelegLaeuft ? 'Wird erzeugt…' : 'Erzeugen'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -578,4 +674,10 @@ export function LieferscheinDetail() {
 }
 export function RechnungDetail() {
   return <BelegDetailGeneric belegTyp="rechnung" />;
+}
+export function ProformaDetail() {
+  return <BelegDetailGeneric belegTyp="proforma" />;
+}
+export function AbschlagDetail() {
+  return <BelegDetailGeneric belegTyp="abschlag" />;
 }

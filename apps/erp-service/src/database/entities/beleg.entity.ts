@@ -6,11 +6,20 @@
 // ist aber bewusst NEU entworfen (Nutzerentscheidung 08.08.2026: "wir sollten
 // uns nicht zu nah am v1 orientieren ... nicht fuer Ablaeufe" - v1 hatte z.B.
 // gar keine echte Teillieferung/-rechnung, nur 1:1-Vollkopie beim Umwandeln).
+//
+// 'proforma'/'abschlag' seit 08.08.2026 (Nutzerforderung, Kundendemo) als
+// ZUSATZBELEGE ergaenzt: entstehen ausschliesslich aus einer Auftrags-
+// bestaetigung (siehe beleg.service.ts::zusatzbeleg()), sind aber bewusst
+// NICHT Teil von BELEG_KETTE/der normalen uebernehmen()-Logik - sie sind
+// unverbindliche/ergaenzende Kopien und beeinflussen weder
+// weitergefuehrteMenge noch den Status des Quellbelegs (anders als
+// Lieferschein/Rechnung). Feldschema-Idee (nicht Ablauf!) an v1s
+// zusatz_nachfolger angelehnt, siehe Kommentar in beleg.service.ts.
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { Kunde } from './kunde.entity';
 import { BelegPosition } from './beleg-position.entity';
 
-export type BelegTyp = 'angebot' | 'auftragsbestaetigung' | 'lieferschein' | 'rechnung';
+export type BelegTyp = 'angebot' | 'auftragsbestaetigung' | 'lieferschein' | 'rechnung' | 'proforma' | 'abschlag';
 
 // Generischer Lebenszyklus-Status, analog dem bereits etablierten Muster bei
 // Bestellung (siehe bestellung.entity.ts): 'weitergefuehrt' ist hier der

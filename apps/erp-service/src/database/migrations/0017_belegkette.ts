@@ -16,7 +16,7 @@ export class Belegkette1786172406583 implements MigrationInterface {
       CREATE TABLE beleg (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         beleg_typ VARCHAR(30) NOT NULL
-          CHECK (beleg_typ IN ('angebot','auftragsbestaetigung','lieferschein','rechnung')),
+          CHECK (beleg_typ IN ('angebot','auftragsbestaetigung','lieferschein','rechnung','proforma','abschlag')),
         belegnummer VARCHAR(30) NOT NULL UNIQUE,
         kunde_id UUID NOT NULL REFERENCES kunde(id),
         status VARCHAR(30) NOT NULL DEFAULT 'offen'

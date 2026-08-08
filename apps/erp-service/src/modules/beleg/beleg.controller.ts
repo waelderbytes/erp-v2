@@ -4,6 +4,7 @@ import { Berechtigung, RbacGuard } from '../../common/rbac';
 import { BelegService } from './beleg.service';
 import { BelegAnlegenDto } from './dto/beleg-anlegen.dto';
 import { BelegUebernehmenDto } from './dto/beleg-uebernehmen.dto';
+import { BelegZusatzbelegDto } from './dto/beleg-zusatzbeleg.dto';
 
 // modul_key 'verkauf' (neu, analog 'einkauf' fuer das Bestellwesen) - deckt
 // die gesamte Belegkette ab (Angebot/Auftragsbestaetigung/Lieferschein/
@@ -41,6 +42,15 @@ export class BelegController {
   @Berechtigung('verkauf', 'schreiben')
   uebernehmen(@Param('id') id: string, @Body() dto: BelegUebernehmenDto, @Req() req: any) {
     return this.belegService.uebernehmen(id, dto, req.user.sub);
+  }
+
+  // Proformarechnung/Abschlagsrechnung aus einer Auftragsbestaetigung
+  // erzeugen - eigene Route statt Ueberladung von 'uebernehmen', weil die
+  // Semantik bewusst eine andere ist (siehe beleg.service.ts::zusatzbeleg()).
+  @Post('beleg/:id/zusatzbeleg')
+  @Berechtigung('verkauf', 'schreiben')
+  zusatzbeleg(@Param('id') id: string, @Body() dto: BelegZusatzbelegDto) {
+    return this.belegService.zusatzbeleg(id, dto);
   }
 
   @Post('beleg/:id/stornieren')

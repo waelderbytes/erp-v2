@@ -100,3 +100,9 @@ export function LieferscheineListe() {
 export function RechnungenListe() {
   return <BelegeListeGeneric belegTyp="rechnung" />;
 }
+export function ProformarechnungenListe() {
+  return <BelegeListeGeneric belegTyp="proforma" />;
+}
+export function AbschlagsrechnungenListe() {
+  return <BelegeListeGeneric belegTyp="abschlag" />;
+}
