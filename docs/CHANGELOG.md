@@ -10,6 +10,47 @@ im vollen Sinn.
 
 ## [Unreleased]
 
+### Design-Update: Optik an Referenzbildern orientiert (08.08.2026)
+- Nutzerwunsch: grafisch/strukturell annaehern, Farbschema unveraendert
+  (nur bestehende CSS-Variablen genutzt, kein neuer Farbwert)
+- Card: duenner farbiger Top-Akzent, CardTitle als kleine Uppercase-Eyebrow
+  statt grossem h3 (wirkt global auf allen Card-Abschnittsheadern)
+- Tabs: unterstrichener Stil statt Segment-/Pill-Optik
+- Neue PageHeading-Komponente (Eyebrow = Navigationsgruppe + fetter Titel)
+  auf allen 9 Listen-/Uebersichtsseiten sowie Artikel-Detail
+- TableHead: Spaltenkoepfe klein/uppercase/tracking-wide
+- Sidebar: Markenblock oben, Benutzerblock unten (E-Mail+Rolle), aktiver
+  Navigationspunkt mit linkem Farbakzent
+
+### Modul Belegkette (Verkauf): Angebot -> Auftragsbestaetigung -> Lieferschein -> Rechnung (08.08.2026)
+- Nutzerentscheidung: gemeinsames Beleg+Beleg-Position-Datenmodell (Feld-
+  schema an ERP v1 angelehnt), Ablauf/Teillieferungslogik aber bewusst NEU
+  entworfen und NICHT aus v1 uebernommen ("wir sollten uns nicht zu nah am
+  v1 orientieren ... nicht fuer Ablaeufe") - v1 hatte z. B. keine echte
+  Teillieferung/-rechnung, nur 1:1-Vollkopie beim Umwandeln
+- Migration 0017: Tabellen `beleg`/`beleg_position`, vier neue
+  Nummernkreise (angebote/auftragsbestaetigungen/lieferscheine/rechnungen)
+- Echte Teillieferung/-rechnung: `weitergefuehrte_menge` pro Position
+  (analog `bestellposition.gelieferte_menge`), Status automatisch
+  offen/teilweise_weitergefuehrt/abgeschlossen/storniert
+- Preis-/Steuersatz-Snapshot pro Position beim Anlegen/Uebernehmen
+  eingefroren (GoBD-Gedanke) - Preisfindung wird automatisch herangezogen,
+  wenn kein manueller Preis angegeben wird
+- Lieferschein-Anlage bucht automatisch Warenausgang (neue Methode
+  `warenausgangInTransaktion` in `lagerbewegung.service.ts`, analog
+  `wareneingangInTransaktion`)
+- `festgeschrieben`-Flag fuer GoBD-Unveraenderlichkeit bei Rechnungen
+  (manueller Endpoint - PDF-Kopplung bewusst als Folgeschritt
+  zurueckgestellt)
+- Neuer RBAC-`modul_key` "verkauf" fuer alle vier Belegtypen
+- Frontend: neue Nav-Gruppe "Vertrieb", generische Listen-/Detail-
+  Komponenten fuer alle vier Belegtypen (Positionen-Editor mit Artikel-
+  oder Freitext-Zeilen, Uebernehmen-Dialog mit Teilmengen-Auswahl,
+  Kleinunternehmer-bewusste Summenanzeige)
+- Verifiziert lokal: erp-service (`tsc --noEmit`, `nest build`), web
+  (`tsc --noEmit`, `vite build`) - alle fehlerfrei. Migration 0017 lokal
+  nicht gegen echte Postgres-DB testbar (Sandbox ohne Docker/Postgres)
+
 ### Modul Stammdaten/System-Einstellungen (08.08.2026)
 - Nutzerentscheidung: erstmal 1 Firma (kein Mehrfirmen-Umbau) - Firma bleibt
   Singleton (id=1)

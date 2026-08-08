@@ -22,6 +22,15 @@ Datensatz-Ebene) vorwegzunehmen. Ergänzt `architecture.md` (Cross-Cutting Conce
   (RbacGuard-Bypass, siehe Abschnitt 1 "Durchsetzung"), passend zum "System-Einstellungen"
   aus der Owner-Zeile in Abschnitt 2. Bei Bedarf kann "stammdaten:lesen" spaeter gezielt an
   z. B. Sachbearbeiter vergeben werden, ohne Codeänderung.
+- **`modul_key` "verkauf"** (neu, Modul Belegkette): deckt alle vier Belegtypen
+  (Angebot/Auftragsbestaetigung/Lieferschein/Rechnung) unter einem gemeinsamen Key ab
+  (`beleg.controller.ts`) - sie sind fachlich ein zusammenhaengender Prozess, keine vier
+  einzelnen Module. Wie "artikelstamm"/"einkauf"/"lager" etc. bisher auch: KEINE
+  Sachbearbeiter-Seed-Migration vorhanden (nur "zeiterfassung" und
+  "benutzerverwaltung" sind bereits seedet, siehe auth-service Migrationen 0002/0003) -
+  bis eine solche Migration ergaenzt wird, greift praktisch nur der
+  Owner/Administrator-Bypass, das ist ein bestehender, projektweiter Zustand und keine
+  neue Einschraenkung durch dieses Modul.
 - **`rolle_berechtigung`**: m:n zwischen Rolle und Berechtigung.
 - **`benutzer_rolle`**: m:n zwischen Benutzer und Rolle – ein Benutzer kann mehrere Rollen
   gleichzeitig haben (z. B. "Sachbearbeiter Warenwirtschaft" + "Lesend Finanzen").
