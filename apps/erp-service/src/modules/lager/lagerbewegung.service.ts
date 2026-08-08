@@ -70,6 +70,27 @@ export class LagerbewegungService {
     );
   }
 
+  // Analog wareneingangInTransaktion (siehe oben) - fuer Aufrufer, die bereits
+  // Teil einer laufenden Transaktion sind (beleg.service.ts::uebernehmen() beim
+  // Anlegen eines Lieferscheins, siehe Kommentar dort).
+  warenausgangInTransaktion(
+    manager: EntityManager,
+    dto: WarenausgangDto,
+    gebuchtVon: string,
+    referenz?: { typ: string; id: string },
+  ): Promise<Lagerbewegung> {
+    return this.bucheDelta(manager, {
+      artikelId: dto.artikelId,
+      lagerId: dto.lagerId,
+      typ: 'warenausgang',
+      delta: `-${dto.menge}`,
+      kommentar: dto.kommentar ?? null,
+      gebuchtVon,
+      referenzTyp: referenz?.typ ?? null,
+      referenzId: referenz?.id ?? null,
+    });
+  }
+
   async umbuchung(dto: UmbuchungDto, gebuchtVon: string): Promise<{ ab: Lagerbewegung; zu: Lagerbewegung }> {
     if (dto.vonLagerId === dto.nachLagerId) {
       throw new ConflictException('Quell- und Ziellager duerfen bei einer Umbuchung nicht identisch sein.');

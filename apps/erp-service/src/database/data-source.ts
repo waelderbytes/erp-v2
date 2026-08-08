@@ -28,6 +28,8 @@ import { Artikelpreis } from './entities/artikelpreis.entity';
 import { Einheit } from './entities/einheit.entity';
 import { StuecklistePosition } from './entities/stueckliste-position.entity';
 import { Steuersatz } from './entities/steuersatz.entity';
+import { Beleg } from './entities/beleg.entity';
+import { BelegPosition } from './entities/beleg-position.entity';
 
 export default new DataSource({
   type: 'postgres',
@@ -42,6 +44,8 @@ export default new DataSource({
     Einheit,
     StuecklistePosition,
     Steuersatz,
+    Beleg,
+    BelegPosition,
   ],
   migrations: [__dirname + '/migrations/*.{ts,js}'], // .ts fuer lokalen ts-node-Lauf, .js fuer den kompilierten dist/-Lauf im Container (siehe migration:run:prod)
   migrationsTableName: 'migrations_erp_service',

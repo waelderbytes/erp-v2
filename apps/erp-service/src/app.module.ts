@@ -25,6 +25,8 @@ import { Artikelpreis } from './database/entities/artikelpreis.entity';
 import { Einheit } from './database/entities/einheit.entity';
 import { StuecklistePosition } from './database/entities/stueckliste-position.entity';
 import { Steuersatz } from './database/entities/steuersatz.entity';
+import { Beleg } from './database/entities/beleg.entity';
+import { BelegPosition } from './database/entities/beleg-position.entity';
 import { ArtikelModule } from './modules/artikel/artikel.module';
 import { FirmaModule } from './modules/firma/firma.module';
 import { NummernkreisModule } from './modules/nummernkreis/nummernkreis.module';
@@ -35,6 +37,7 @@ import { EinkaufModule } from './modules/einkauf/einkauf.module';
 import { PreisfindungModule } from './modules/preisfindung/preisfindung.module';
 import { EinheitModule } from './modules/einheit/einheit.module';
 import { SteuersatzModule } from './modules/steuersatz/steuersatz.module';
+import { BelegModule } from './modules/beleg/beleg.module';
 
 @Module({
   imports: [
@@ -44,7 +47,7 @@ import { SteuersatzModule } from './modules/steuersatz/steuersatz.module';
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         url: config.get('DATABASE_URL'),
-        entities: [Artikel, ArtikelUebersetzung, ArtikelLieferant, Artikelkategorie, ArtikelkategorieZuordnung, Firma, Nummernkreis, Kunde, KundeAdresse, KundeKontakt, KundeBewertung, Bewertungskriterium, Lieferant, LieferantAdresse, LieferantKontakt, Lager, Lagerbestand, Lagerbewegung, Bestellung, Bestellposition, Artikelpreis, Einheit, StuecklistePosition, Steuersatz],
+        entities: [Artikel, ArtikelUebersetzung, ArtikelLieferant, Artikelkategorie, ArtikelkategorieZuordnung, Firma, Nummernkreis, Kunde, KundeAdresse, KundeKontakt, KundeBewertung, Bewertungskriterium, Lieferant, LieferantAdresse, LieferantKontakt, Lager, Lagerbestand, Lagerbewegung, Bestellung, Bestellposition, Artikelpreis, Einheit, StuecklistePosition, Steuersatz, Beleg, BelegPosition],
         synchronize: false, // Schema ausschliesslich per Migration, siehe CLAUDE.md
       }),
     }),
@@ -58,6 +61,7 @@ import { SteuersatzModule } from './modules/steuersatz/steuersatz.module';
     PreisfindungModule,
     EinheitModule,
     SteuersatzModule,
+    BelegModule,
   ],
 })
 export class AppModule {}

@@ -8,5 +8,6 @@ import { PreisfindungController } from './preisfindung.controller';
   imports: [TypeOrmModule.forFeature([Artikelpreis])],
   controllers: [PreisfindungController],
   providers: [PreisfindungService],
+  exports: [PreisfindungService],
 })
 export class PreisfindungModule {}
