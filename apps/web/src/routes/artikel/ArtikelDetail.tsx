@@ -710,7 +710,7 @@ function BestandTab({ artikelId }: { artikelId: string }) {
       {lagerListe.length > 0 && (
         <Card className="max-w-lg">
           <CardHeader>
-            <CardTitle className="text-base">Bewegung buchen</CardTitle>
+            <CardTitle>Bewegung buchen</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
@@ -826,7 +826,7 @@ function PreiseTab({ artikelId }: { artikelId: string }) {
 
       <Card className="max-w-lg">
         <CardHeader>
-          <CardTitle className="text-base">Preis anlegen</CardTitle>
+          <CardTitle>Preis anlegen</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={anlegen} className="space-y-3">
@@ -955,7 +955,7 @@ function LieferantenTab({ artikelId }: { artikelId: string }) {
       {nichtZugeordnet.length > 0 && (
         <Card className="max-w-md">
           <CardHeader>
-            <CardTitle className="text-base">Lieferant zuordnen</CardTitle>
+            <CardTitle>Lieferant zuordnen</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={zuordnen} className="flex items-end gap-3">
@@ -1056,7 +1056,7 @@ function SprachenTab({ artikelId }: { artikelId: string }) {
   return (
     <Card className="max-w-xl">
       <CardHeader>
-        <CardTitle className="text-base">Weitere Sprachen für Kurztext/Langtext</CardTitle>
+        <CardTitle>Weitere Sprachen für Kurztext/Langtext</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-xs text-muted-foreground">
@@ -1469,7 +1469,7 @@ function StuecklisteTab({ artikel }: { artikel: Artikel }) {
 
       <Card className="max-w-lg">
         <CardHeader>
-          <CardTitle className="text-base">Position hinzufügen</CardTitle>
+          <CardTitle>Position hinzufügen</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="space-y-1.5">

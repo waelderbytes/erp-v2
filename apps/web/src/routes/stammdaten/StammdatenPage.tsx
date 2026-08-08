@@ -152,7 +152,7 @@ function FirmaTab() {
     <div className="grid max-w-3xl gap-4 md:grid-cols-2">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Firmenstammdaten</CardTitle>
+          <CardTitle>Firmenstammdaten</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={stammdatenSpeichern} className="space-y-3">
@@ -214,7 +214,7 @@ function FirmaTab() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Artikelnummern-Schema</CardTitle>
+          <CardTitle>Artikelnummern-Schema</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="space-y-1.5">
@@ -323,7 +323,7 @@ function SteuersaetzeTab() {
     <div className="max-w-2xl space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Neuer Steuersatz</CardTitle>
+          <CardTitle>Neuer Steuersatz</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={anlegen} className="flex items-end gap-2">

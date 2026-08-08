@@ -63,8 +63,14 @@ export function Layout() {
   return (
     <div className="flex min-h-screen">
       <aside className="flex w-60 shrink-0 flex-col border-r border-border bg-card">
-        <div className="flex h-14 items-center border-b border-border px-4">
-          <span className="text-sm font-semibold">WälderBytes ERP</span>
+        {/* Markenblock: Eyebrow + grosser Produktname + kleine Subline -
+            Anlehnung an Referenzbilder (08.08.2026), keine Farbaenderung. */}
+        <div className="border-b border-border px-4 py-4">
+          <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+            ERP System
+          </div>
+          <div className="text-lg font-bold leading-tight text-primary">WälderBytes ERP</div>
+          <div className="text-xs text-muted-foreground">Warenwirtschaft</div>
         </div>
         <nav className="flex-1 space-y-4 overflow-y-auto p-3">
           {navigationGruppen.map((gruppe) => {
@@ -97,7 +103,12 @@ export function Layout() {
           })}
         </nav>
         <div className="border-t border-border p-3">
-          <div className="mb-2 truncate text-xs text-muted-foreground">{user?.email}</div>
+          <div className="mb-2">
+            <div className="truncate text-sm font-semibold">{user?.email}</div>
+            {user?.rollen[0] && (
+              <div className="truncate text-xs capitalize text-muted-foreground">{user.rollen[0]}</div>
+            )}
+          </div>
           <button
             onClick={() => {
               logout();
