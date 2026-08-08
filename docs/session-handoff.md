@@ -6,7 +6,7 @@ Diese Zusammenfassung ist für einen neuen Claude-Chat gedacht (Geräte-/Session
 
 Multi-Tenant-ERP-System "WälderBytes ERP V2", von Grund auf neu gebaut (nicht die alte "waelderbytes-suite" v1). Ziel: vollumfängliches ERP mit Auftrags-/Projektverwaltung und Zeiterfassung, als Webapp, self-hosted oder als Abo buchbar, modular erweiterbar, DSGVO-konform.
 
-**Repo:** `https://github.com/waelderbytes/erp-v2.git` (aktueller Stand HEAD: Commit `19f38d8`, siehe unten fuer Details zu den einzelnen Commits dieser Session)
+**Repo:** `https://github.com/waelderbytes/erp-v2.git` (aktueller Stand HEAD: Commit `36a5da5`, siehe unten fuer Details zu den einzelnen Commits dieser Session)
 **Server:** Hetzner CPX22, `test.wbyt.app`, Deploy via Docker Compose + Traefik
 **PAT/Zugangsdaten:** liegen in der Cowork-Outputs-Datei `zugangsdaten-NICHT-COMMITTEN.md` — NIE ins Repo committen (Regeln.md Abschnitt 0a)
 
@@ -53,14 +53,20 @@ als Vorbild dienen könnte, das explizit mit dem Nutzer abstimmen statt anzunehm
 18. **Modul Stammdaten/System-Einstellungen** (Backend+Frontend, 08.08.2026): Nutzerentscheidung erstmal 1 Firma (kein Mehrfirmen-Umbau). Steuersaetze (Migration 0014, Seed 19/7/0%), `artikel.steuersatz_id` jetzt echte Pflicht-FK (Migration 0015 — **damit ist der Feldkatalog-Abgleich jetzt wirklich vollstaendig abgearbeitet**), Firmenstammdaten (Migration 0016: Name/Anschrift/USt-IdNr./Steuernummer/Telefon/E-Mail/Kleinunternehmer-Flag). Neue Endpoints unter modul_key `stammdaten` (`GET/PATCH /firma`, `POST /firma/artikelnummern-schema`, `PATCH /firma/artikelnummern-stellen`, `GET/POST/PATCH /steuersaetze`, `GET/PATCH /nummernkreise/:entityKey`). Frontend: Seite `/stammdaten` (Tabs Firma/Steuersaetze/Nummernkreise), Steuersatz-Pflichtfeld im Artikel-Stammdaten-Tab — gepusht (Commits `1209dd3` Backend, `657b161` Frontend, `d0829eb` Docs), **NOCH NICHT deployt, Migrationen 0014-0016 lokal nicht gegen echte DB testbar**
 19. **Reset-/Seed-Skripte fuer Testdaten** (08.08.2026): `scripts/reset-testdaten.sql` (leert nur Bewegungsdaten, Stammdaten/Konfiguration bleibt, `nummernkreis.next_value` wird zurueckgesetzt, `audit_log` nur scoped bereinigt statt pauschal geleert — siehe architecture.md Abschnitt 5, Unveraenderlichkeit) + `apps/erp-service/src/database/seed-testdaten.ts` (`npm run seed:testdaten`, legt Testdaten ueber die echten Services an, jederzeit wiederholt ausfuehrbar) — gepusht (Commit `a724a5d`), **bestaetigt funktionsfaehig auf dem Server** (Nutzer 08.08.2026: "okay geht auch")
 20. **Design-Update** (08.08.2026): grafische Annaeherung an vom Nutzer bereitgestellte Referenzbilder ("Nexus ERP") — bewusst NUR Layout/Struktur, KEINE Farbaenderung (bestehendes Farbschema/CSS-Variablen bleiben). Card-Top-Akzent + CardTitle als Uppercase-Eyebrow (wirkt global), Tabs unterstrichen statt Pill-Optik, neue `PageHeading`-Komponente (Eyebrow=Navigationsgruppe + fetter Titel) auf allen Listen-/Uebersichtsseiten, TableHead uppercase/tracking-wide, Sidebar-Markenblock + Benutzerblock (E-Mail+Rolle) + linker Farbakzent bei aktivem Navigationspunkt. Erste Version deckte nur Card/Tabs-lastige Seiten ab (Stammdaten, Artikel-Detail) — nach Nutzer-Feedback ("warum nicht das menu links warum nicht alles") in einer zweiten Runde auf ALLE Seiten ausgeweitet — gepusht (Commits `1f6ab65`, `f3511fd`), **bestaetigt sichtbar auf dem Server**
-21. **Modul Belegkette (Verkauf)**: Angebot → Auftragsbestaetigung → Lieferschein → Rechnung (08.08.2026). Siehe eigene Sektion "Umgang mit ERP v1 als Referenz" oben fuer die Leitentscheidung dazu (Feldschema an v1 angelehnt, Ablauf/Teillieferungslogik komplett neu). Gemeinsames `beleg`+`beleg_position`-Datenmodell (Migration 0017), vier neue Nummernkreise, echte Teillieferung/-rechnung per Position (`weitergefuehrte_menge`, analog `bestellposition.gelieferte_menge`), automatischer Status offen/teilweise_weitergefuehrt/abgeschlossen/storniert, Preis-/Steuersatz-Snapshot pro Position (GoBD), Preisfindung wird beim Anlegen automatisch herangezogen, Lieferschein-Anlage bucht automatisch Warenausgang, `festgeschrieben`-Flag fuer Rechnungen (GoBD-Unveraenderlichkeit, noch ohne PDF-Kopplung). Neuer RBAC-modul_key `verkauf`. Frontend: neue Nav-Gruppe "Vertrieb", generische Listen-/Detail-Komponenten fuer alle vier Typen inkl. Uebernehmen-Dialog mit Teilmengen-Auswahl und Kleinunternehmer-bewusster Summenanzeige — gepusht (Commits `772203f` Backend, `e3afff2` Frontend, `19f38d8` Docs), **NOCH NICHT deployt, Migration 0017 lokal nicht gegen echte DB testbar**. Bewusst NICHT Teil dieser ersten Version: PDF-Ausgabe (Nutzerentscheidung: erst Workflow, PDF als Folgeschritt)
+21. **Modul Belegkette (Verkauf)**: Angebot → Auftragsbestaetigung → Lieferschein → Rechnung (08.08.2026). Siehe eigene Sektion "Umgang mit ERP v1 als Referenz" oben fuer die Leitentscheidung dazu (Feldschema an v1 angelehnt, Ablauf/Teillieferungslogik komplett neu). Gemeinsames `beleg`+`beleg_position`-Datenmodell (Migration 0017), echte Teillieferung/-rechnung per Position (`weitergefuehrte_menge`, analog `bestellposition.gelieferte_menge`), automatischer Status offen/teilweise_weitergefuehrt/abgeschlossen/storniert, Preis-/Steuersatz-Snapshot pro Position (GoBD), Preisfindung wird beim Anlegen automatisch herangezogen, Lieferschein-Anlage bucht automatisch Warenausgang, `festgeschrieben`-Flag fuer Rechnungen (GoBD-Unveraenderlichkeit, noch ohne PDF-Kopplung). Neuer RBAC-modul_key `verkauf`. Frontend: neue Nav-Gruppe "Vertrieb", generische Listen-/Detail-Komponenten inkl. Uebernehmen-Dialog mit Teilmengen-Auswahl und Kleinunternehmer-bewusster Summenanzeige — gepusht (Commits `772203f` Backend, `e3afff2` Frontend, `19f38d8` Docs), **NOCH NICHT deployt, Migration 0017 lokal nicht gegen echte DB testbar**. Bewusst NICHT Teil der ersten Version: PDF-Ausgabe (Nutzerentscheidung: erst Workflow, PDF als Folgeschritt)
+22. **Proformarechnungen/Abschlagsrechnungen + Artikel-Warengruppen** (08.08.2026, Kundenforderung fuer Demo, dringend). (a) Proforma/Abschlag als neue `BelegTyp`-Werte, entstehen ausschliesslich als Zusatzbeleg aus einer Auftragsbestaetigung (`BelegService.zusatzbeleg()`), bewusst NICHT Teil von `BELEG_KETTE`/`uebernehmen()` - beeinflussen weder `weitergefuehrteMenge` noch Status der Quelle, keine Restmengen-Sperre (mehrfach moeglich, z. B. Teilzahlungsraten), zwei neue Nummernkreise, `abschlag` festschreibbar wie `rechnung`, `proforma` nicht. Migration 0017 direkt erweitert (war noch nicht deployt). Frontend: neuer Zusatzbeleg-Dialog auf der Auftragsbestaetigung-Detailseite, zwei neue Nav-Eintraege. (b) Kategoriebasierte Artikelnummern (Ober-/Untergruppe) end-to-end nutzbar gemacht: neues CRUD `ArtikelkategorieService`/`-controller` (modul_key `stammdaten`, Route `/artikelkategorien` + Vorschau-Endpoint), neuer Stammdaten-Tab "Artikel-Warengruppen", Hauptgruppe/Untergruppe-Auswahl mit Live-Vorschau im Artikel-Anlegen-Formular. Gepusht (Commits `64ba1a8` Artikel-Warengruppen, `36a5da5` Proforma/Abschlag), **NOCH NICHT deployt** (baut auf demselben, noch nicht deployten Migration 0017 auf).
 
 ## Offene Baustelle gerade eben
 
 Stand: Stammdaten-Modul (Migrationen 0014-0016), Reset-/Seed-Skripte UND das
 Design-Update sind vom Nutzer bereits auf dem Server bestaetigt ("okay dann
 machen wir weiter" nach erfolgreichem Test aller drei). **Neu und NOCH NICHT
-deployt: Modul Belegkette (Migration 0017, Commits `772203f`/`e3afff2`).**
+deployt: Modul Belegkette inkl. Proforma/Abschlag (Migration 0017, Commits
+`772203f`/`e3afff2`/`36a5da5`) sowie Artikel-Warengruppen (Commit `64ba1a8`,
+keine eigene Migration - nutzt bereits bestehende Tabellen aus Migration
+0001).** Nutzerforderung 08.08.2026: Proforma/Abschlag und Artikel-
+Warengruppen wurden noch VOR dem ersten Deploy von Belegkette nachgezogen
+(Kundendemo), daher ALLES zusammen in einem Deploy-Schritt testbar.
 Deploy-Befehl fuer den aktuellen Stand:
 
 ```bash
@@ -76,7 +82,7 @@ allem Migration 0017 (`beleg`/`beleg_position`, vier neue Nummernkreise).
 **Wichtig**: Migration 0017 konnte lokal NICHT gegen eine echte Postgres-DB
 getestet werden (Cowork-Sandbox hat keinen Docker/Postgres-Zugriff). Nach dem
 Deploy auf dem Testserver gezielt pruefen:
-- Neue Nav-Gruppe "Vertrieb" sichtbar (Angebote/Auftraege/Lieferscheine/Rechnungen)
+- Neue Nav-Gruppe "Vertrieb" sichtbar (Angebote/Auftraege/Lieferscheine/Rechnungen/Proformarechnungen/Abschlagsrechnungen)
 - Ein Angebot mit 2-3 Positionen anlegen (einmal mit Artikel-Auswahl, einmal
   Freitext-Position ohne Artikel), Preis/Steuersatz automatisch ermittelt pruefen
 - Angebot -> Auftragsbestaetigung uebernehmen, dabei bewusst nur eine TEIL-Menge
@@ -89,6 +95,16 @@ Deploy auf dem Testserver gezielt pruefen:
   dass Stornieren abgelehnt wird (GoBD-Unveraenderlichkeit)
 - Bei einer Firma mit `kleinunternehmer=true` pruefen, dass die Summenanzeige
   KEINE Umsatzsteuer ausweist und stattdessen der Pflichthinweistext erscheint
+- Auf einer Auftragsbestaetigung "Als Proformarechnung erzeugen" UND "Als
+  Abschlagsrechnung erzeugen" testen -> pruefen, dass sich Status/
+  weitergefuehrte Menge der Auftragsbestaetigung NICHT aendern und dass
+  danach trotzdem noch normal nach Lieferschein uebernommen werden kann
+- Abschlagsrechnung festschreiben (muss gehen), bei Proformarechnung pruefen
+  dass "Festschreiben" gar nicht erst angeboten wird
+- Stammdaten -> Artikel-Warengruppen: je eine Haupt-/Untergruppe mit Code
+  anlegen, dann Artikel -> Neu mit Schema 'kategorie' (vorher in Stammdaten ->
+  Firma umstellen) -> pruefen, dass die Live-Vorschau die erwartete Nummer
+  zeigt und der Artikel diese Nummer auch tatsaechlich bekommt
 
 Alle groesseren Entscheidungen dieser Session (Stückliste-Datenmodell,
 Log-Benutzer-Fix-Umfang, Stammdaten erstmal 1 Firma, Reset-Umfang nur
@@ -179,8 +195,9 @@ Alle bisherigen Roadmap-Punkte sind CODE-fertig (siehe "Offene Baustelle" oben f
 9. ~~Reset-/Seed-Skripte fuer Testdaten~~ — erledigt (Commit `a724a5d`), **auf dem Server bestaetigt**. Entschieden VOR der Umsetzung: nur Bewegungsdaten zuruecksetzen, Seed ueber echte Services statt SQL-Insert
 10. ~~Design-Update (Layout, keine Farbaenderung)~~ — erledigt (Commits `1f6ab65`/`f3511fd`), **auf dem Server bestaetigt** (zwei Runden: erst Card/Tabs, dann auf Nutzer-Wunsch alle Seiten)
 11. ~~Modul Belegkette (Verkauf): Angebot/Auftragsbestaetigung/Lieferschein/Rechnung~~ — erledigt (Commits `772203f`/`e3afff2`/`19f38d8`), Deploy steht aus. Entschieden VOR der Umsetzung: gemeinsames Datenmodell (Feldschema aus v1), Ablauf/Teillieferung komplett neu entworfen (NICHT aus v1), erst Workflow dann PDF
+12. ~~Proformarechnungen/Abschlagsrechnungen + Artikel-Warengruppen (Ober-/Untergruppe)~~ — erledigt (Commits `64ba1a8`/`36a5da5`), Deploy steht aus. Kundenforderung fuer Demo, siehe Eintrag 22 unter "Fertige Module" fuer Details
 
-**Offen als naechstes**: PDF-Ausgabe fuer die Belegkette (bewusst zurueckgestellter Folgeschritt der gerade fertigen Basis-Version) - sonst muss die naechste Prioritaet neu mit dem User geklaert werden (z.B. Materialbedarfsplanung/Fertigungsauftraege als natuerlicher Folgeschritt der Stückliste, Projekt-/Auftragsverwaltung, oder eigene RBAC-Rollenzuteilung fuer die neuen modul_keys `stammdaten`/`verkauf` ausserhalb Owner/Administrator - siehe module-uebersicht.md).
+**Offen als naechstes**: Deploy + Server-Test von Belegkette/Proforma/Abschlag/Artikel-Warengruppen (siehe Checkliste oben unter "Offene Baustelle"), danach PDF-Ausgabe fuer die Belegkette (bewusst zurueckgestellter Folgeschritt) - oder eine neue Prioritaet mit dem User klaeren (z.B. Materialbedarfsplanung/Fertigungsauftraege als natuerlicher Folgeschritt der Stückliste, Projekt-/Auftragsverwaltung, oder eigene RBAC-Rollenzuteilung fuer die modul_keys `stammdaten`/`verkauf` ausserhalb Owner/Administrator - siehe module-uebersicht.md).
 
 ## Beim Feldkatalog-Abgleich (07./08.08.2026) gefundene fehlende Artikel-Felder
 

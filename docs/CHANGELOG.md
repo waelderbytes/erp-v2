@@ -10,6 +10,28 @@ im vollen Sinn.
 
 ## [Unreleased]
 
+### Proformarechnungen/Abschlagsrechnungen + kategoriebasierte Artikelnummern fertiggestellt (08.08.2026)
+- Nutzerforderung (Kundendemo, dringend): zwei bislang offene Luecken
+  geschlossen
+- **Proforma/Abschlag**: neue `BelegTyp`-Werte, entstehen ausschliesslich
+  als Zusatzbeleg aus einer Auftragsbestaetigung (neue Methode
+  `BelegService.zusatzbeleg()`), bewusst NICHT Teil der normalen
+  `uebernehmen()`-Kette - beeinflussen weder `weitergefuehrteMenge` noch den
+  Status der Auftragsbestaetigung (unverbindliche/ergaenzende Kopien,
+  mehrfach moeglich, z. B. Teilzahlungsraten). Zwei neue Nummernkreise
+  (proformarechnungen/abschlagsrechnungen). `abschlag` ist wie `rechnung`
+  festschreibbar (echte GoBD-relevante Anzahlungsrechnung), `proforma`
+  ausdruecklich nicht. Migration 0017 (noch nicht deployed) direkt erweitert
+  statt neuer Migration. Feldschema-Idee an v1s `zusatz_nachfolger`
+  angelehnt, der Ablauf ist bewusst neu entworfen.
+- **Kategoriebasierte Artikelnummern (Ober-/Untergruppe)**: bisher gab es
+  nur die Nummernvergabe selbst (`ArtikelNummerService`), keine Moeglichkeit,
+  Haupt-/Untergruppen anzulegen. Neues CRUD (`ArtikelkategorieService`/
+  `-controller`, modul_key `stammdaten`) + neuer Tab "Artikel-Warengruppen"
+  in den Stammdaten + Hauptgruppe/Untergruppe-Auswahl mit Live-Vorschau der
+  naechsten Nummer im Artikel-Anlegen-Formular (nur bei
+  `artikelnummernSchema === 'kategorie'`, nur beim Anlegen aenderbar)
+
 ### Design-Update: Optik an Referenzbildern orientiert (08.08.2026)
 - Nutzerwunsch: grafisch/strukturell annaehern, Farbschema unveraendert
   (nur bestehende CSS-Variablen genutzt, kein neuer Farbwert)
