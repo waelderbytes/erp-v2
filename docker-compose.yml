@@ -45,6 +45,12 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      # Siehe common/filters/all-exceptions.filter.ts: bei unerwarteten
+      # Fehlern kommt Fehlermeldung+Stacktrace direkt in der HTTP-Antwort
+      # mit statt nur "Internal server error". Default 'true', da dies der
+      # Testserver ist - bei echten Kunden-Deployments in deren .env auf
+      # 'false' setzen (DEBUG_ERRORS=false), sonst DSGVO-relevantes Leck.
+      DEBUG_ERRORS: ${DEBUG_ERRORS:-true}
     depends_on:
       - postgres
     ports:
